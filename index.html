@@ -181,6 +181,22 @@
   .ans .who { flex: 0 0 auto; max-width: 42%; text-align: right; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
   .ans.picked { border-color: var(--ink); background: var(--paper-warm); }
   .codebig { font-size: 56px; font-weight: 300; letter-spacing: 0.18em; text-align: center; padding-left: 0.18em; line-height: 1.2; font-variant-numeric: tabular-nums; margin: 4px 0 10px; }
+  textarea {
+    width: 100%; background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px 14px; font-family: inherit; font-size: 16px; line-height: 1.4; color: var(--ink);
+    outline: none; margin-bottom: 10px; resize: none; -webkit-appearance: none; appearance: none;
+  }
+  textarea:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(26,25,22,0.07); }
+  .banner.neutral { background: var(--accent-soft); color: #633806; }
+  .qa { padding: 10px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
+  .qa:last-child { border-bottom: none; }
+  .qa .qf { color: var(--ink-faint); font-size: 12px; margin-bottom: 3px; }
+  .qa.skip { opacity: 0.55; }
+  .own { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
+  .own:last-child { border-bottom: none; }
+  .own .t { flex: 1; }
+  .own .m { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-top: 2px; }
+  .own button { background: none; border: none; color: var(--red); font-size: 13px; padding: 6px 4px; cursor: pointer; }
   .trophy { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
 </style>
 </head>
@@ -200,6 +216,8 @@
   var LEVELS = { 0: 'Gemischt', 1: 'Leicht', 2: 'Mittel', 3: 'Schwer' };
   var TYPE_LABELS = { mc: 'Multiple Choice', tf: 'Wahr oder falsch', est: 'Schätzfragen' };
   var DEFAULTS = { cats: null, level: 0, types: { mc: true, tf: true, est: true }, mode: 'count', n: 10, target: 100 };
+  var PDEFAULTS = { pmode: 'kennt', level: 1, n: 10, wertung: 'gegen', vorschlag: true, eigen: true };
+  var PBASE_KEY = 'quiz_abend_pbase_v1';
 
   // ── Hilfsfunktionen ────────────────────────────────────────────────────────
   var app = document.getElementById('app');
@@ -244,6 +262,9 @@
       catLabels: s.catLabels && typeof s.catLabels === 'object' ? s.catLabels : {},
       seen: Array.isArray(s.seen) ? s.seen : [],
       recGids: Array.isArray(s.recGids) ? s.recGids : [],
+      pq: Array.isArray(s.pq) ? s.pq : [],
+      pseen: Array.isArray(s.pseen) ? s.pseen : [],
+      psettings: Object.assign({}, PDEFAULTS, s.psettings || {}),
       myName: typeof s.myName === 'string' ? s.myName : '',
       lastCode: typeof s.lastCode === 'string' ? s.lastCode : '',
       live: s.live && s.live.L ? s.live : null,
@@ -260,7 +281,7 @@
   }
 
   // ── Fragen ─────────────────────────────────────────────────────────────────
-  var base = { kategorien: {}, fragen: [] };
+  var base = { kategorien: {}, fragen: [], paar: [] };
   var loadError = null;
 
   function cleanQ(q) {
@@ -287,18 +308,35 @@
     return out;
   }
 
+  function loadPaar() {
+    return fetch('paarfragen.json', { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d || !Array.isArray(d.fragen)) throw new Error('Format');
+      base.paar = d.fragen.map(cleanPQ).filter(Boolean);
+      try { localStorage.setItem(PBASE_KEY, JSON.stringify(base.paar)); } catch (e) {}
+    }).catch(function () {
+      try { var c = JSON.parse(localStorage.getItem(PBASE_KEY) || 'null'); if (Array.isArray(c)) base.paar = c; } catch (x) {}
+    });
+  }
+
   function loadBase() {
+    return loadWissen().then(loadPaar);
+  }
+
+  function loadWissen() {
     return fetch('fragen.json', { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }).then(function (d) {
       if (!d || !Array.isArray(d.fragen)) throw new Error('Format');
-      base = { kategorien: d.kategorien || {}, fragen: d.fragen.map(cleanQ).filter(Boolean) };
+      base = { kategorien: d.kategorien || {}, fragen: d.fragen.map(cleanQ).filter(Boolean), paar: base.paar || [] };
       try { localStorage.setItem(BASE_KEY, JSON.stringify(base)); } catch (e) {}
     }).catch(function (e) {
       try {
         var c = JSON.parse(localStorage.getItem(BASE_KEY) || 'null');
-        if (c && Array.isArray(c.fragen) && c.fragen.length) { base = c; return; }
+        if (c && Array.isArray(c.fragen) && c.fragen.length) { base = { kategorien: c.kategorien || {}, fragen: c.fragen, paar: base.paar || [] }; return; }
       } catch (x) {}
       loadError = e && e.message ? e.message : 'Fehler';
     });
@@ -589,6 +627,8 @@
     else if (view === 'setup') node = viewSetup(false);
     else if (view === 'lsetup') node = viewSetup(true);
     else if (view === 'lmenu') node = viewLiveMenu();
+    else if (view === 'psetup') node = viewPSetup();
+    else if (view === 'pmanage') node = viewPManage();
     else if (view === 'play') node = viewPlay();
     else node = viewResult();
     app.replaceChildren(node);
@@ -613,14 +653,15 @@
     var game = S.game && !S.game.over && S.game.queue && S.game.idx < S.game.queue.length ? S.game : null;
     var live = S.live && S.live.L && S.live.L.names ? S.live : null;
     return el('div', null,
-      header('Wissen für zwei'),
+      header('Spiele für zwei'),
       notice ? el('div', { class: 'notice', text: notice }) : null,
-      el('h1', null, 'Wer weiß ', el('strong', { text: 'mehr' }), '?'),
-      el('p', { class: 'lead', text: 'Fragen beantworten, Joker nutzen, Punkte sammeln – gleichzeitig auf zwei Handys oder abwechselnd auf einem.' }),
+      el('h1', null, 'Was spielen wir ', el('strong', { text: 'heute' }), '?'),
       live ? el('div', { class: 'card' },
-        el('div', { class: 'label', text: 'Zwei-Handy-Spiel läuft' }),
-        el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[0] }), el('span', { class: 'v', text: String(live.L.scores[0]) })),
-        el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[1] }), el('span', { class: 'v', text: String(live.L.scores[1]) })),
+        el('div', { class: 'label', text: live.L.kind === 'paar' ? 'Paarabend läuft' : 'Zwei-Handy-Spiel läuft' }),
+        live.L.kind === 'paar'
+          ? el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[0] + ' und ' + live.L.names[1] }), el('span', { class: 'v', text: 'Frage ' + Math.min(live.L.idx + 1, live.L.queue.length) + ' von ' + live.L.queue.length }))
+          : [el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[0] }), el('span', { class: 'v', text: String(live.L.scores[0]) })),
+             el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[1] }), el('span', { class: 'v', text: String(live.L.scores[1]) }))],
         el('div', { class: 'hint', text: 'Du bist Handy 1. Beim Fortsetzen wird der Raum mit dem alten Code wieder geöffnet.' }),
         el('div', { class: 'btnrow', style: 'margin-top:12px' },
           el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: resumeLive }),
@@ -632,8 +673,16 @@
         el('div', { class: 'btnrow', style: 'margin-top:12px' },
           el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: resumeGame }),
           el('button', { class: 'btn small', text: 'Verwerfen', onclick: function () { if (confirm('Das laufende Spiel verwerfen?')) { S.game = null; save(); render(); } } }))) : null,
-      el('button', { class: 'btn primary', text: 'Zwei Handys – gleichzeitig', onclick: function () { notice = ''; go('lmenu'); } }),
-      el('button', { class: 'btn', text: 'Ein Handy – abwechselnd', onclick: function () { notice = ''; go('setup'); } }),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Wer weiß mehr?' }),
+        el('div', { class: 'info', text: 'Wissensfragen mit Joker und Zeitbonus: gleichzeitig auf zwei Handys oder abwechselnd auf einem.' }),
+        el('button', { class: 'btn primary', text: 'Zwei Handys – gleichzeitig', onclick: function () { notice = ''; lkind = 'wissen'; go('lmenu'); } }),
+        el('button', { class: 'btn', style: 'margin-bottom:0', text: 'Ein Handy – abwechselnd', onclick: function () { notice = ''; go('setup'); } })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Paarabend' }),
+        el('div', { class: 'info', text: 'Fragen über euch beide: Wie gut kennt ihr euch, wie ähnlich seid ihr? Drei Tiefenstufen, jede Frage lässt sich überspringen.' }),
+        el('button', { class: 'btn primary', style: 'margin-bottom:4px', text: 'Paarabend – zwei Handys', onclick: function () { notice = ''; lkind = 'paar'; go('lmenu'); } }),
+        el('div', { class: 'center' }, el('button', { class: 'linkbtn', text: 'Eigene Paarfragen (' + S.pq.length + ')', onclick: function () { notice = ''; pBack = 'home'; go('pmanage'); } }))),
       bil.length ? el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Bilanz' }),
         el('table', null,
@@ -642,6 +691,7 @@
       el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Fragen' }),
         el('div', { class: 'info', text: total + ' Fragen im Spiel' + (S.imported.length ? ' (davon ' + S.imported.length + ' importiert)' : '') + '.' }),
+        el('div', { class: 'info', text: 'Paarfragen: ' + (base.paar || []).length + ' Vorschläge, ' + S.pq.length + ' eigene.' }),
         el('div', { class: 'btnrow' },
           el('button', { class: 'btn small', text: 'Importieren', onclick: function () { document.getElementById('fileIn').click(); } }),
           el('button', { class: 'btn small', text: 'Sichern', onclick: exportBackup }))),
@@ -890,7 +940,13 @@
       try {
         var d = JSON.parse(rd.result);
         var list = Array.isArray(d) ? d : (d && Array.isArray(d.fragen) ? d.fragen : null);
-        if (!list && !(d && d.bilanz)) throw new Error('Format');
+        var plist = d && Array.isArray(d.paarfragen) ? d.paarfragen : [];
+        if (list) {
+          var wl = [];
+          list.forEach(function (x) { if (x && (x.typ === 'frei' || x.typ === 'wahl')) plist.push(x); else wl.push(x); });
+          list = wl;
+        }
+        if (!list && !plist.length && !(d && d.bilanz)) throw new Error('Format');
         var ids = {}; allQuestions().forEach(function (q) { ids[q.id] = 1; });
         var added = 0, skipped = 0, dup = 0;
         (list || []).forEach(function (raw) {
@@ -902,6 +958,14 @@
         if (d && d.kategorien && typeof d.kategorien === 'object') {
           Object.keys(d.kategorien).forEach(function (k) { if (!base.kategorien[k]) S.catLabels[k] = String(d.kategorien[k]); });
         }
+        var pAdded = 0;
+        var pids = {}; (base.paar || []).concat(S.pq).forEach(function (q) { pids[q.id] = 1; });
+        plist.forEach(function (raw) {
+          var q = cleanPQ(raw);
+          if (!q) { skipped++; return; }
+          if (pids[q.id]) { dup++; return; }
+          pids[q.id] = 1; S.pq.push(q); pAdded++;
+        });
         var bil = 0;
         if (d && d.bilanz && typeof d.bilanz === 'object') {
           Object.keys(d.bilanz).forEach(function (k) {
@@ -911,6 +975,7 @@
         }
         save();
         var parts = [added + ' neue Fragen importiert'];
+        if (pAdded) parts.push(pAdded + ' Paarfragen');
         if (dup) parts.push(dup + ' schon vorhanden');
         if (skipped) parts.push(skipped + ' ungültig');
         if (bil) parts.push('Bilanz übernommen');
@@ -924,7 +989,7 @@
   });
 
   function exportBackup() {
-    var data = { version: 1, name: 'Quiz-Abend Sicherung', exported: new Date().toISOString(), kategorien: S.catLabels, fragen: S.imported, bilanz: S.bilanz };
+    var data = { version: 1, name: 'Quiz-Abend Sicherung', exported: new Date().toISOString(), kategorien: S.catLabels, fragen: S.imported, paarfragen: S.pq, bilanz: S.bilanz };
     var json = JSON.stringify(data, null, 2);
     var fname = 'quiz-abend-sicherung.json';
     try {
@@ -955,7 +1020,7 @@
   var L = null;      // Spielstand (nur auf Handy 1)
   var LV = null;     // Ansichtsmodell für dieses Handy
   var lui = {};      // lokaler Zustand der Live-Ansicht
-  var lwatch = null, ltimer = null, wakeLock = null;
+  var lwatch = null, ltimer = null, wakeLock = null, lkind = 'wissen';
 
   function myName() { return String(S.myName || '').trim().slice(0, 16); }
   function cleanName(n) { return String(n || '').trim().slice(0, 16); }
@@ -1096,24 +1161,27 @@
   }
 
   // ── Raum erstellen (Handy 1) ───────────────────────────────────────────────
-  function hostRoom(st, sv) {
+  function lBuild(p) { return L.kind === 'paar' ? buildPV(p) : buildV(p); }
+
+  function hostRoom(st, sv, kind) {
     requestWake();
     loadPeerLib().then(function () {
       net = newNet(); net.role = 'host';
       lui = {};
       if (sv) {
         net.code = sv.code; net.resume = true;
-        L = sv.L; L.pool = makePool(L.settings); L.paused = false;
+        L = sv.L; L.paused = false;
+        if (L.kind !== 'paar') L.pool = makePool(L.settings);
         if (L.queue[L.idx]) L.it = L.queue[L.idx];
         if (L.phase === 'ask') { L.ans = [null, null]; lBeginQ(); }
         if (L.phase === 'feedback') L.ready = [false, false];
         net.msg = 'Raum ' + net.code + ' wird wieder geöffnet. Handy 2 verbindet sich automatisch oder tritt mit dem Code neu bei.';
       } else {
         net.code = randomCode();
-        lNew(st, myName());
+        lNew(st, myName(), kind);
         net.msg = 'Verbinde mit dem Vermittlungsserver …';
       }
-      LV = buildV(0); lui.qk = LV.qk;
+      LV = lBuild(0); lui.qk = LV.qk;
       view = 'live'; startHost(0); render();
     }).catch(function () {
       notice = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; go('lmenu');
@@ -1246,9 +1314,9 @@
   }
 
   // ═══ Spielstand auf Handy 1 ═════════════════════════════════════════════════
-  function lNew(st, hostName) {
+  function lNew(st, hostName, kind) {
     L = {
-      gid: newGid(), settings: clone(st), names: [hostName, ''], phase: 'lobby',
+      kind: kind || 'wissen', gid: newGid(), settings: clone(st), names: [hostName, ''], phase: 'lobby',
       scores: [0, 0], right: [0, 0], stdAsked: [0, 0], estWins: [0, 0],
       jokers: [{ fifty: 1, swap: 1 }, { fifty: 1, swap: 1 }],
       queue: [], idx: 0, rounds: 0, it: null, order: null, ans: [null, null], hidden: [[], []],
@@ -1258,6 +1326,7 @@
   }
 
   function lStartGame() {
+    if (L.kind === 'paar') return pStartGame();
     var st = L.settings, pool = poolFor(st);
     L.allowEst = pool.some(function (q) { return q.typ === 'est'; });
     L.allowStd = pool.some(function (q) { return q.typ !== 'est'; });
@@ -1336,7 +1405,7 @@
   function onGuestHi(d) {
     if (!L) return;
     var name = cleanName(d.name) || 'Spieler 2';
-    var running = L.phase === 'ask' || L.phase === 'feedback' || L.phase === 'over';
+    var running = L.phase !== 'lobby';
     if (bilanzKey(name) === bilanzKey(L.names[0])) { netSend({ t: 'rej', why: 'name' }); setTimeout(function () { try { net.conn.close(); } catch (e) {} }, 300); net.up = false; return; }
     if (running && L.names[1] && bilanzKey(name) !== bilanzKey(L.names[1])) { netSend({ t: 'rej', why: 'running' }); setTimeout(function () { try { net.conn.close(); } catch (e) {} }, 300); net.up = false; return; }
     L.names[1] = name;
@@ -1347,6 +1416,7 @@
 
   function lAct(p, m) {
     if (!L || !m) return;
+    if (L.kind === 'paar') return pAct(p, m);
     var a = m.a, q = L.it && L.it.q, left;
     if (a === 'answer' || a === 'guess' || a === 'timeout') {
       if (L.phase !== 'ask' || L.paused || L.ans[p]) return;
@@ -1442,9 +1512,8 @@
 
   function lPush() {
     persistLive();
-    var mine = buildV(0);
-    localApply(mine);
-    if (net.up) netSend({ t: 'v', v: buildV(1) });
+    localApply(lBuild(0));
+    if (net.up) netSend({ t: 'v', v: lBuild(1) });
   }
 
   function resumeLive() {
@@ -1506,7 +1575,7 @@
     LV = v;
     if (v.qk !== lui.qk) { lui.qk = v.qk; lui.sent = false; lui.pick = null; lui.draft = ''; lui.guess = null; }
     if (lui.awaitSync) { lui.awaitSync = false; lui.sent = !!v.my; }
-    if (v.phase === 'over') recordResult(v.gid, v.names, v.scores);
+    if (v.phase === 'over' && v.kind !== 'paar') recordResult(v.gid, v.names, v.scores);
     lStartTimer(v);
     renderLive();
   }
@@ -1564,13 +1633,14 @@
     if (lSend({ a: 'guess', v: val, left: left })) { lui.sent = true; renderLive(); }
   }
   function leaveAsk() {
-    var inGame = LV && (LV.phase === 'ask' || LV.phase === 'feedback');
+    var inGame = LV && ['ask', 'feedback', 'pself', 'pguess', 'preveal'].indexOf(LV.phase) >= 0;
     var msg = inGame ? 'Spiel beenden? Der Stand geht verloren.' : 'Raum verlassen?';
     if (confirm(msg)) leaveLive(true, '');
   }
 
   // ── Ansichten ──────────────────────────────────────────────────────────────
   function viewLiveMenu() {
+    var paar = lkind === 'paar';
     var nameIn = el('input', { type: 'text', id: 'lname', placeholder: 'Dein Name', maxlength: '16', autocomplete: 'off',
       value: S.myName || S.names[0] || '', oninput: function () { S.myName = this.value; save(); } });
     var codeIn = el('input', { type: 'text', id: 'lcode', class: 'big', inputmode: 'numeric', maxlength: '4', placeholder: 'Code', autocomplete: 'off',
@@ -1582,14 +1652,16 @@
       S.myName = n; save(); return n;
     }
     return el('div', null,
-      el('div', { class: 'topbar' }, header('Zwei Handys'),
+      el('div', { class: 'topbar' }, header(paar ? 'Paarabend' : 'Zwei Handys'),
         el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { go('home'); } })),
       notice ? el('div', { class: 'notice', text: notice }) : null,
-      el('p', { class: 'lead', text: 'Beide Handys brauchen Internet, am besten im selben WLAN. Ihr beantwortet jede Frage gleichzeitig.' }),
+      el('p', { class: 'lead', text: paar
+        ? 'Beide Handys brauchen Internet, am besten im selben WLAN. Ihr beantwortet die Fragen gleichzeitig, jeder auf seinem Handy.'
+        : 'Beide Handys brauchen Internet, am besten im selben WLAN. Ihr beantwortet jede Frage gleichzeitig.' }),
       el('div', { class: 'card' }, el('div', { class: 'label', text: 'Dein Name' }), nameIn, err),
       el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Handy 1 – Spiel einrichten' }),
-        el('button', { class: 'btn primary', text: 'Raum erstellen', onclick: function () { if (name()) { notice = ''; go('lsetup'); } } })),
+        el('button', { class: 'btn primary', text: 'Raum erstellen', onclick: function () { if (name()) { notice = ''; go(paar ? 'psetup' : 'lsetup'); } } })),
       el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Handy 2 – Spiel beitreten' }),
         codeIn,
@@ -1609,6 +1681,7 @@
     var v = LV;
     if (!v) return viewLiveConnect();
     if (v.phase === 'lobby') return viewLiveLobby(v);
+    if (v.kind === 'paar') return viewPaar(v);
     if (v.phase === 'over') return viewLiveOver(v);
     return viewLivePlay(v);
   }
@@ -1668,6 +1741,7 @@
   }
 
   function statusText(v) {
+    if (v.kind === 'paar') return pStatusText(v);
     if (v.phase !== 'ask') return '';
     var opp = v.names[1 - v.me], answered = !!(v.my || lui.sent);
     if (answered) return v.oppDone ? '' : 'Antwort abgegeben. Warte auf ' + opp + ' …';
@@ -1792,7 +1866,7 @@
     var v = LV;
     if (!v) return 'conn|' + net.msg + '|' + (net.up ? 1 : 0);
     return [v.phase, v.qk, v.my ? 1 : 0, lui.sent ? 1 : 0, v.paused ? 1 : 0, net.up ? 1 : 0, v.hidden.join(''), v.jk.fifty, v.jk.swap,
-      v.canSwap ? 1 : 0, v.ready.join(''), v.scores.join(','), v.names.join('/'), net.msg, net.route, notice].join('|');
+      v.canSwap ? 1 : 0, v.ready.join(''), v.scores.join(','), v.names.join('/'), net.msg, net.route, notice, v.sig || '', lui.pick].join('|');
   }
 
   function renderLive() {
@@ -1807,6 +1881,451 @@
     app.setAttribute('data-lkey', key);
     lPaintTimer();
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Paarabend: „Kennst du mich?“ und „Wie ähnlich sind wir?“ (nur auf zwei Handys)
+  // ═══════════════════════════════════════════════════════════════════════════
+  var PLEVELS = { 0: 'Gemischt', 1: 'Leicht', 2: 'Persönlich', 3: 'Tief' };
+  var PLEVEL_HINT = {
+    0: 'Von leicht bis tief, in dieser Reihenfolge.',
+    1: 'Vorlieben und Alltag – locker zum Aufwärmen.',
+    2: 'Erinnerungen, Alltag und ihr beide.',
+    3: 'Wünsche, Werte und Nähe – am besten mit Ruhe und Zeit.'
+  };
+  var PJ_PTS = { T: 10, F: 5, D: 0 };
+  var JD_LABEL = { T: 'Treffer', F: 'Fast', D: 'Daneben', G: 'Gleich', V: 'Unterschiedlich' };
+  var pBack = 'home';
+  var pform = { frage: '', typ: 'frei', stufe: 1, opts: ['', '', '', ''], err: '' };
+
+  function cleanPQ(q) {
+    if (!q || typeof q !== 'object') return null;
+    var id = String(q.id || '').trim(), frage = String(q.frage || '').trim().slice(0, 200), stufe = Number(q.stufe), typ = q.typ;
+    if (!id || !frage || [1, 2, 3].indexOf(stufe) < 0) return null;
+    var out = { id: id, stufe: stufe, typ: typ, frage: frage };
+    if (q.thema) out.thema = String(q.thema).slice(0, 40);
+    if (typ === 'wahl') {
+      if (!Array.isArray(q.optionen)) return null;
+      var o = q.optionen.map(function (x) { return String(x).trim().slice(0, 80); }).filter(Boolean);
+      if (o.length < 2 || o.length > 6) return null;
+      out.optionen = o;
+    } else if (typ !== 'frei') return null;
+    return out;
+  }
+
+  function pPoolFor(st) {
+    var all = [];
+    if (st.vorschlag) all = all.concat(base.paar || []);
+    if (st.eigen) all = all.concat(S.pq);
+    return all.filter(function (q) { return st.level === 0 || q.stufe === st.level; });
+  }
+
+  function pBuildQueue(st) {
+    var pool = pPoolFor(st), seen = {};
+    S.pseen.forEach(function (id) { seen[id] = 1; });
+    function order(a) {
+      return shuffle(a.filter(function (q) { return !seen[q.id]; })).concat(shuffle(a.filter(function (q) { return seen[q.id]; })));
+    }
+    var picked = [];
+    if (st.level === 0) {
+      var lists = [1, 2, 3].map(function (l) { return order(pool.filter(function (q) { return q.stufe === l; })); });
+      var guard = 0;
+      while (picked.length < st.n && guard++ < 100) {
+        var added = false;
+        [0, 1, 0, 1, 2].forEach(function (li) {
+          if (picked.length < st.n && lists[li].length) { picked.push(lists[li].shift()); added = true; }
+        });
+        if (!added) break;
+      }
+      picked.sort(function (a, b) { return a.stufe - b.stufe; });
+    } else picked = order(pool).slice(0, st.n);
+    picked.forEach(function (q) { if (S.pseen.indexOf(q.id) < 0) S.pseen.push(q.id); });
+    if (S.pseen.length > 500) S.pseen = S.pseen.slice(-400);
+    save();
+    return picked.map(function (q) { return { q: q }; });
+  }
+
+  function psettingsRows(st) {
+    var src = [st.vorschlag ? 'Vorschläge' : null, st.eigen ? 'Eigene' : null].filter(Boolean).join(' + ');
+    var rows = [
+      ['Spielart', st.pmode === 'kennt' ? 'Kennst du mich?' : 'Wie ähnlich sind wir?'],
+      ['Tiefe', PLEVELS[st.level]],
+      ['Fragen', st.n + ' · ' + src]
+    ];
+    if (st.pmode === 'kennt') rows.push(['Wertung', st.wertung === 'gegen' ? 'Gegeneinander' : 'Gemeinsam']);
+    return rows;
+  }
+
+  // ── Ablauf auf Handy 1 ─────────────────────────────────────────────────────
+  function pStartGame() {
+    var st = L.settings;
+    L.gid = newGid(); L.scores = [0, 0]; L.hits = [0, 0]; L.pairs = 0; L.matches = 0; L.skipped = 0; L.log = [];
+    L.queue = pBuildQueue(st); L.idx = 0;
+    if (!L.queue.length) { L.phase = 'lobby'; return false; }
+    pBegin();
+    return true;
+  }
+
+  function pBegin() {
+    L.it = L.queue[L.idx]; L.phase = 'pself';
+    L.self = [null, null]; L.guess = [null, null]; L.jd = [null, null]; L.ready = [false, false];
+    lPush();
+  }
+
+  function pClean(q, v) {
+    if (q.typ === 'wahl') { var i = Number(v); return (v !== null && v !== '' && Number.isInteger(i) && i >= 0 && i < q.optionen.length) ? i : null; }
+    var t = String(v === null || v === undefined ? '' : v).trim().slice(0, 160);
+    return t ? t : null;
+  }
+  function pTxt(q, v) { if (v === null || v === undefined) return ''; return q.typ === 'wahl' ? q.optionen[v] : v; }
+
+  function pEnterReveal() {
+    var q = L.it.q, st = L.settings, p;
+    L.phase = 'preveal'; L.jd = [null, null]; L.ready = [false, false];
+    if (q.typ !== 'wahl') return;
+    if (st.pmode === 'aehnlich') { var same = L.self[0] === L.self[1]; L.jd = [same ? 'G' : 'V', same ? 'G' : 'V']; }
+    else for (p = 0; p < 2; p++) L.jd[p] = L.guess[1 - p] === L.self[p] ? 'T' : 'D';
+  }
+
+  function pApply() {
+    var q = L.it.q, st = L.settings, p;
+    var entry = { f: q.frage, a: [pTxt(q, L.self[0]), pTxt(q, L.self[1])] };
+    L.pairs++;
+    if (st.pmode === 'aehnlich') {
+      var match = L.jd[0] === 'G' && L.jd[1] === 'G';
+      if (match) L.matches++;
+      entry.m = match;
+    } else {
+      entry.g = [pTxt(q, L.guess[0]), pTxt(q, L.guess[1])];
+      entry.r = [0, 0];
+      for (p = 0; p < 2; p++) {
+        var gu = 1 - p, pts = PJ_PTS[L.jd[p]] || 0;
+        L.scores[gu] += pts; L.hits[gu] += pts / 10; entry.r[gu] = pts;
+      }
+    }
+    L.log.push(entry);
+  }
+
+  function pAdvance() {
+    L.idx++;
+    if (L.idx >= L.queue.length) return pFinish();
+    pBegin();
+  }
+
+  function pFinish() {
+    L.phase = 'over'; L.ready = [false, false]; L.it = null;
+    S.live = null; save();
+    lPush();
+  }
+
+  function pAct(p, m) {
+    var a = m.a, q = L.it && L.it.q, st = L.settings;
+    if (a === 'pself') {
+      if (L.phase !== 'pself' || L.self[p] !== null) return;
+      var v = pClean(q, m.v); if (v === null) return;
+      L.self[p] = v;
+      if (L.self[0] !== null && L.self[1] !== null) { if (st.pmode === 'aehnlich') pEnterReveal(); else L.phase = 'pguess'; }
+      lPush();
+    } else if (a === 'pguess') {
+      if (L.phase !== 'pguess' || L.guess[p] !== null) return;
+      var g = pClean(q, m.v); if (g === null) return;
+      L.guess[p] = g;
+      if (L.guess[0] !== null && L.guess[1] !== null) pEnterReveal();
+      lPush();
+    } else if (a === 'pjudge') {
+      if (L.phase !== 'preveal' || L.jd[p] !== null) return;
+      var okv = st.pmode === 'aehnlich' ? ['G', 'V'] : ['T', 'F', 'D'];
+      if (okv.indexOf(m.v) < 0) return;
+      L.jd[p] = m.v;
+      lPush();
+    } else if (a === 'pnext') {
+      if (L.phase !== 'preveal' || L.jd[0] === null || L.jd[1] === null) return;
+      L.ready[p] = true;
+      if (L.ready[0] && L.ready[1]) { pApply(); pAdvance(); } else lPush();
+    } else if (a === 'pskip') {
+      if (L.phase !== 'pself' && L.phase !== 'pguess') return;
+      L.skipped++; L.log.push({ f: q.frage, skip: true });
+      pAdvance();
+    } else if (a === 'rematch') {
+      if (L.phase !== 'over') return;
+      L.ready[p] = true;
+      if (L.ready[0] && L.ready[1]) { if (!lStartGame()) lPush(); } else lPush();
+    }
+  }
+
+  // ── Ansichtsmodell ─────────────────────────────────────────────────────────
+  function buildPV(p) {
+    var o = 1 - p, st = L.settings;
+    var v = { kind: 'paar', phase: L.phase, me: p, names: L.names.slice(), scores: (L.scores || [0, 0]).slice(), qk: L.phase, hidden: [],
+              ready: L.ready.slice(), jk: { fifty: 0, swap: 0 }, my: null, oppDone: false, paused: false, left: 0, total: 0,
+              canSwap: false, gid: L.gid, sig: '', pm: st.pmode, wertung: st.wertung };
+    if (L.phase === 'lobby') { v.set = psettingsRows(st); return v; }
+    v.stats = { pairs: L.pairs, matches: L.matches, hits: L.hits[0] + L.hits[1], skipped: L.skipped };
+    if (L.phase === 'over') {
+      v.qk = 'over:' + L.gid;
+      v.final = { hits: L.hits.slice(), log: L.log.slice(0, 40), n: L.queue.length };
+      v.sig = 'over|' + L.ready.join('');
+      return v;
+    }
+    var q = L.it.q;
+    v.qk = L.idx + ':' + q.id + ':' + L.phase;
+    v.prog = 'Frage ' + (L.idx + 1) + ' von ' + L.queue.length;
+    v.q = { typ: q.typ, frage: q.frage, opts: q.optionen || null, meta: (q.thema || 'Frage') + ' · ' + levelDots(q.stufe) };
+    if (L.phase === 'pself') {
+      v.my = L.self[p] !== null ? { v: L.self[p] } : null; v.oppDone = L.self[o] !== null;
+      v.sig = 'pself|' + (v.my ? 1 : 0);
+    } else if (L.phase === 'pguess') {
+      v.my = L.guess[p] !== null ? { v: L.guess[p] } : null; v.oppDone = L.guess[o] !== null;
+      v.sig = 'pguess|' + (v.my ? 1 : 0);
+    } else {
+      var rv = { mySelf: pTxt(q, L.self[p]), oppSelf: pTxt(q, L.self[o]), jd: L.jd.slice() };
+      if (st.pmode === 'kennt') { rv.myGuess = pTxt(q, L.guess[p]); rv.oppGuess = pTxt(q, L.guess[o]); }
+      v.rv = rv;
+      v.sig = 'rv|' + L.jd.join('') + '|' + L.ready.join('');
+    }
+    return v;
+  }
+
+  function pStatusText(v) {
+    if (v.phase !== 'pself' && v.phase !== 'pguess') return '';
+    var opp = v.names[1 - v.me], done = !!(v.my || lui.sent);
+    if (done) return v.oppDone ? '' : 'Gespeichert. Warte auf ' + opp + ' …';
+    return v.oppDone ? opp + ' ist schon fertig.' : '';
+  }
+
+  // ── Ansichten ──────────────────────────────────────────────────────────────
+  function pCan() { return net.role === 'host' || net.up; }
+
+  function pScoreBar(v) {
+    var s = v.stats, boxes;
+    function box(i) {
+      return el('div', { class: 'pbox' + (v.me === i ? ' active' : '') },
+        el('div', { class: 'pname', text: v.names[i] + (v.me === i ? ' (du)' : '') }),
+        el('div', { class: 'pscore', text: String(v.scores[i]) }));
+    }
+    function wide(label, value) {
+      return el('div', { class: 'pbox' }, el('div', { class: 'pname', text: label }), el('div', { class: 'pscore', text: value }));
+    }
+    if (v.pm === 'aehnlich') boxes = [wide('Gleich geantwortet', s.matches + ' von ' + s.pairs)];
+    else if (v.wertung === 'gegen') boxes = [box(0), box(1)];
+    else boxes = [wide('Gemeinsame Treffer', fmt(s.hits) + ' von ' + (s.pairs * 2))];
+    return el('div', null,
+      el('div', { class: 'topbar' }, el('div', { class: 'logo', text: 'Quiz-Abend' }),
+        el('button', { class: 'linkbtn', text: 'Beenden', onclick: leaveAsk })),
+      el('div', { class: 'scorebar' }, boxes),
+      el('div', { class: 'progress', text: v.prog || '' }));
+  }
+
+  function viewPaar(v) {
+    if (v.phase === 'over') return viewPaarOver(v);
+    return el('div', null, pScoreBar(v), liveLinkNote(v), v.phase === 'preveal' ? pReveal(v) : pInput(v));
+  }
+
+  function pSubmit(kind, val) {
+    if (lSend({ a: kind, v: val })) { lui.sent = true; lui.val = val; renderLive(); }
+  }
+
+  function pInput(v) {
+    var q = v.q, opp = 1 - v.me, oppName = v.names[opp], guessing = v.phase === 'pguess';
+    var done = !!(v.my || lui.sent), can = pCan(), kind = guessing ? 'pguess' : 'pself';
+    var card = el('div', { class: 'card' },
+      el('div', { class: 'meta', text: q.meta }),
+      el('div', { class: 'label', text: guessing ? 'Rate: Was antwortet ' + oppName + '?' : (v.pm === 'kennt' ? 'Nur für dich – ' + oppName + ' rät gleich' : 'Nur für dich') }),
+      el('div', { class: 'qtext', text: q.frage }));
+    if (done) {
+      var val = v.my ? v.my.v : lui.val;
+      card.append(el('div', { class: 'info', text: (guessing ? 'Dein Tipp: ' : 'Deine Antwort: ') + (q.opts ? q.opts[val] : val) }));
+    } else if (q.opts) {
+      card.append(el('div', { class: 'answers' }, q.opts.map(function (txt, d) {
+        return el('button', { class: 'ans' + (lui.pick === d ? ' picked' : ''), disabled: !can, onclick: function () { lui.pick = d; renderLive(); } },
+          el('span', { class: 'letter', text: 'ABCDEF'.charAt(d) }), el('span', { class: 'atext', text: txt }));
+      })));
+      card.append(el('button', { class: 'btn primary', style: 'margin-top:14px', text: guessing ? 'Tipp abgeben' : 'Antwort abgeben',
+        disabled: !can || lui.pick === null || lui.pick === undefined, onclick: function () { pSubmit(kind, lui.pick); } }));
+    } else {
+      var ta = el('textarea', { id: 'lguess', rows: '3', maxlength: '160', placeholder: guessing ? 'Dein Tipp …' : 'Deine Antwort …', disabled: !can,
+        oninput: function () { lui.draft = this.value; btn.disabled = !this.value.trim() || !can; } });
+      ta.value = lui.draft || '';
+      var btn = el('button', { class: 'btn primary', text: guessing ? 'Tipp abgeben' : 'Antwort abgeben', disabled: !can || !(lui.draft || '').trim(),
+        onclick: function () { if (ta.value.trim()) pSubmit(kind, ta.value.trim()); } });
+      card.append(ta, btn);
+    }
+    card.append(el('div', { class: 'hint', id: 'lstatus', text: pStatusText(v) }));
+    return el('div', null, card,
+      el('button', { class: 'btn ghost', text: 'Frage überspringen', disabled: !can, onclick: function () { lSend({ a: 'pskip' }); } }));
+  }
+
+  function judgeButtons(labels, name, who) {
+    return el('div', null,
+      el('div', { class: 'info', style: 'margin:12px 0 8px', text: name }),
+      el('div', { class: 'btnrow' }, labels.map(function (k) {
+        return el('button', { class: 'btn small', disabled: !pCan(), text: JD_LABEL[k], onclick: function () { lSend({ a: 'pjudge', v: k }); } });
+      })));
+  }
+
+  function pReveal(v) {
+    var q = v.q, rv = v.rv, me = v.me, opp = 1 - me, names = v.names, kennt = v.pm === 'kennt';
+    var jme = rv.jd[me], jop = rv.jd[opp], both = jme !== null && jop !== null;
+    var auto = !!q.opts;
+    var card = el('div', { class: 'card' }, el('div', { class: 'meta', text: q.meta }), el('div', { class: 'qtext', text: q.frage }));
+    function row(k, t) { return el('div', { class: 'row' }, el('span', { class: 'k', text: k }), el('span', { class: 'v', text: t })); }
+
+    if (kennt) {
+      card.append(el('div', { class: 'label', text: 'Über dich' }), row('Deine Antwort', rv.mySelf), row(names[opp] + ' hat geraten', rv.oppGuess));
+      if (jme === null) card.append(judgeButtons(['T', 'F', 'D'], 'Wie nah lag ' + names[opp] + '?'));
+      else card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Deine Bewertung: ' + JD_LABEL[jme] }));
+      card.append(el('div', { class: 'label', style: 'margin-top:18px', text: 'Über ' + names[opp] }), row(names[opp] + ' hat geantwortet', rv.oppSelf), row('Du hast geraten', rv.myGuess));
+      if (jop === null) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Warte auf die Bewertung von ' + names[opp] + ' …' }));
+      else card.append(el('div', { class: 'banner ' + (jop === 'T' ? 'good' : (jop === 'F' ? 'neutral' : 'miss')) },
+        jop === 'T' ? 'Treffer!' : (jop === 'F' ? 'Fast!' : 'Diesmal daneben'), el('small', { text: '+' + PJ_PTS[jop] + ' Punkte' })));
+    } else {
+      card.append(row('Du', rv.mySelf), row(names[opp], rv.oppSelf));
+      if (jme === null) card.append(judgeButtons(['G', 'V'], 'Sind eure Antworten ähnlich?'));
+      else if (!both) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Warte auf ' + names[opp] + ' …' }));
+      else {
+        var same = jme === 'G' && jop === 'G';
+        card.append(el('div', { class: 'banner ' + (same ? 'good' : 'neutral') }, same ? 'Gleich!' : 'Unterschiedlich', el('small', { text: same ? 'Da seid ihr euch einig.' : 'Spannend – darüber könnt ihr kurz reden.' })));
+      }
+    }
+    var btn = null;
+    if (both) btn = v.ready[me]
+      ? el('button', { class: 'btn', text: 'Warte auf ' + names[opp] + ' …', disabled: true })
+      : el('button', { class: 'btn primary', text: 'Weiter', onclick: function () { lSend({ a: 'pnext' }); } });
+    return el('div', null, card, btn);
+  }
+
+  function viewPaarOver(v) {
+    var s = v.stats, F = v.final, names = v.names, me = v.me, opp = 1 - me, a = v.scores[0], b = v.scores[1];
+    var head;
+    if (v.pm === 'aehnlich') {
+      head = el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: 'Gemeinsam' }),
+        el('div', { class: 'big', text: s.pairs ? 'Bei ' + s.matches + ' von ' + s.pairs + ' Fragen gleich' : 'Keine Frage beantwortet' }));
+    } else if (v.wertung === 'gegen') {
+      var win = a > b ? 0 : (b > a ? 1 : -1);
+      head = el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: win < 0 ? 'Unentschieden' : 'Vorn liegt' }),
+        el('div', { class: 'big', text: win < 0 ? 'Gleichstand bei ' + a + ' Punkten' : (win === me ? 'Du' : names[win]) }),
+        el('div', { class: 'info', style: 'margin:8px 0 0', text: names[0] + ' ' + a + ' · ' + names[1] + ' ' + b }));
+    } else {
+      head = el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: 'Gemeinsame Treffer' }),
+        el('div', { class: 'big', text: fmt(s.hits) + ' von ' + (s.pairs * 2) }));
+    }
+    var log = F.log.map(function (e) {
+      if (e.skip) return el('div', { class: 'qa skip' }, el('div', { class: 'qf', text: e.f }), 'übersprungen');
+      var lines = [el('div', null, names[0] + ': ' + e.a[0]), el('div', null, names[1] + ': ' + e.a[1])];
+      var tail = e.m !== undefined ? (e.m ? 'gleich' : 'unterschiedlich') : (names[0] + ' +' + e.r[0] + ' · ' + names[1] + ' +' + e.r[1]);
+      return el('div', { class: 'qa' }, el('div', { class: 'qf', text: e.f }), lines, el('div', { class: 'qf', style: 'margin:3px 0 0', text: tail }));
+    });
+    var rematch = v.ready[me]
+      ? el('button', { class: 'btn', text: 'Warte auf ' + names[opp] + ' …', disabled: true })
+      : el('button', { class: 'btn primary', text: 'Noch eine Runde', disabled: !net.up, onclick: function () { lSend({ a: 'rematch' }); } });
+    return el('div', null, header('Ergebnis'), liveLinkNote(v), head,
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Zum Weiterreden' }),
+        el('div', { class: 'info', style: 'margin:0', text: 'Welche Antwort hat euch überrascht? Was habt ihr heute Neues voneinander erfahren? Wofür möchtet ihr dem anderen danken?' })),
+      log.length ? el('div', { class: 'card' }, el('div', { class: 'label', text: 'Rückblick' }), log) : null,
+      s.skipped ? el('div', { class: 'hint center', text: s.skipped + (s.skipped === 1 ? ' Frage übersprungen.' : ' Fragen übersprungen.') }) : null,
+      rematch,
+      el('button', { class: 'btn ghost', text: 'Zum Start', onclick: function () { leaveLive(true, ''); } }));
+  }
+
+  // ── Einrichtung (Handy 1) ──────────────────────────────────────────────────
+  function viewPSetup() {
+    var st = S.psettings, pool = pPoolFor(st);
+    function upd(fn) { fn(); save(); render(); }
+    var warn = '';
+    if (!pool.length) warn = 'Mit dieser Auswahl gibt es keine Fragen.';
+    else if (pool.length < st.n) warn = 'Nur ' + pool.length + ' passende Fragen – es werden entsprechend weniger gespielt.';
+    function seg(options, cur, set) {
+      return el('div', { class: 'seg' }, options.map(function (o) {
+        return el('button', { class: cur === o[0] ? 'sel' : '', text: o[1], onclick: function () { upd(function () { set(o[0]); }); } });
+      }));
+    }
+    return el('div', null,
+      el('div', { class: 'topbar' }, header('Paarabend'), el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { go('lmenu'); } })),
+      notice ? el('div', { class: 'notice', text: notice }) : null,
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Spielart' }),
+        seg([['kennt', 'Kennst du mich?'], ['aehnlich', 'Wie ähnlich sind wir?']], st.pmode, function (x) { st.pmode = x; }),
+        el('div', { class: 'hint', text: st.pmode === 'kennt'
+          ? 'Beide beantworten eine Frage für sich und raten dann, was der andere geantwortet hat.'
+          : 'Beide beantworten eine Frage für sich. Danach seht ihr, wo ihr gleich geantwortet habt.' })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Tiefe' }),
+        el('div', { class: 'chips' }, [1, 2, 3, 0].map(function (l) {
+          return el('button', { class: 'chip' + (st.level === l ? ' sel' : ''), text: PLEVELS[l], onclick: function () {
+            upd(function () { st.level = l; if (l === 3) st.wertung = 'gemeinsam'; });
+          } });
+        })),
+        el('div', { class: 'hint', text: PLEVEL_HINT[st.level] + (st.level === 3 && st.pmode === 'kennt' ? ' Dazu passt die gemeinsame Wertung.' : '') })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Fragen' }),
+        el('div', { class: 'chips' },
+          el('button', { class: 'chip' + (st.vorschlag ? ' sel' : ''), text: 'Vorschläge (' + (base.paar || []).length + ')', onclick: function () { upd(function () { if (st.vorschlag && !st.eigen) return; st.vorschlag = !st.vorschlag; }); } }),
+          el('button', { class: 'chip' + (st.eigen ? ' sel' : ''), text: 'Eigene (' + S.pq.length + ')', onclick: function () { upd(function () { if (st.eigen && !st.vorschlag) return; st.eigen = !st.eigen; }); } })),
+        el('div', { class: 'stepper' },
+          el('button', { text: '−', 'aria-label': 'Weniger Fragen', onclick: function () { upd(function () { st.n = Math.max(6, st.n - 2); }); } }),
+          el('div', { class: 'val' }, String(st.n), el('span', { class: 'unit', text: 'Fragen' })),
+          el('button', { text: '+', 'aria-label': 'Mehr Fragen', onclick: function () { upd(function () { st.n = Math.min(20, st.n + 2); }); } })),
+        el('div', { class: 'center' }, el('button', { class: 'linkbtn', text: 'Eigene Fragen verwalten', onclick: function () { pBack = 'psetup'; go('pmanage'); } }))),
+      st.pmode === 'kennt' ? el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Wertung' }),
+        seg([['gegen', 'Gegeneinander'], ['gemeinsam', 'Gemeinsam']], st.wertung, function (x) { st.wertung = x; }),
+        el('div', { class: 'hint', text: st.wertung === 'gegen'
+          ? 'Jeder sammelt Punkte für richtige Tipps (10 für einen Treffer, 5 für „fast“). Am Ende liegt einer vorn.'
+          : 'Alle Treffer zählen zusammen. Es gibt keinen Sieger, ihr spielt miteinander.' })) : null,
+      el('div', { class: 'hint' + (warn ? ' warn' : ''), style: 'margin:0 0 14px', text: warn || (pool.length + ' passende Fragen. Jede Frage lässt sich überspringen.') }),
+      el('button', { class: 'btn primary', text: 'Raum erstellen', disabled: !pool.length, onclick: function () { save(); hostRoom(clone(st), null, 'paar'); } }));
+  }
+
+  // ── Eigene Fragen ──────────────────────────────────────────────────────────
+  function viewPManage() {
+    var f = pform;
+    function refresh() { render(); }
+    function addQuestion() {
+      var opts = f.opts.map(function (x) { return x.trim(); }).filter(Boolean);
+      var raw = { id: 'own-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), stufe: f.stufe, typ: f.typ, frage: f.frage };
+      if (f.typ === 'wahl') raw.optionen = opts;
+      var q = cleanPQ(raw);
+      if (!f.frage.trim()) f.err = 'Bitte eine Frage eintippen.';
+      else if (!q) f.err = f.typ === 'wahl' ? 'Für eine Auswahlfrage braucht es mindestens zwei Antworten.' : 'Die Frage konnte nicht gespeichert werden.';
+      else {
+        S.pq.push(q); save();
+        pform = { frage: '', typ: f.typ, stufe: f.stufe, opts: ['', '', '', ''], err: '' };
+      }
+      refresh();
+    }
+    var list = S.pq.length
+      ? S.pq.map(function (q, i) {
+          return el('div', { class: 'own' },
+            el('div', { class: 't' }, q.frage, el('span', { class: 'm', text: PLEVELS[q.stufe] + ' · ' + (q.typ === 'wahl' ? 'Auswahl (' + q.optionen.length + ')' : 'Freitext') })),
+            el('button', { text: 'Löschen', onclick: function () { if (confirm('Diese Frage löschen?')) { S.pq.splice(i, 1); save(); refresh(); } } }));
+        })
+      : el('div', { class: 'info', style: 'margin:0', text: 'Noch keine eigenen Fragen.' });
+    return el('div', null,
+      el('div', { class: 'topbar' }, header('Eigene Paarfragen'), el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { go(pBack); } })),
+      el('p', { class: 'lead', text: 'Eigene Fragen bleiben nur auf diesem Handy. Im Spiel zählen die Fragen von Handy 1. Formuliere sie so, dass beide sie für sich beantworten können („Was …, du?“).' }),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Neue Frage' }),
+        el('input', { type: 'text', id: 'pf-frage', maxlength: '200', placeholder: 'z. B. Dein schönster Urlaubstag?', autocomplete: 'off', value: f.frage,
+          oninput: function () { f.frage = this.value; f.err = ''; } }),
+        el('div', { class: 'chips', style: 'margin-bottom:10px' },
+          el('button', { class: 'chip' + (f.typ === 'frei' ? ' sel' : ''), text: 'Freitext', onclick: function () { f.typ = 'frei'; refresh(); } }),
+          el('button', { class: 'chip' + (f.typ === 'wahl' ? ' sel' : ''), text: 'Auswahl', onclick: function () { f.typ = 'wahl'; refresh(); } })),
+        f.typ === 'wahl' ? f.opts.map(function (o, i) {
+          return el('input', { type: 'text', maxlength: '80', placeholder: 'Antwort ' + (i + 1) + (i < 2 ? '' : ' (optional)'), autocomplete: 'off', value: o,
+            oninput: function () { f.opts[i] = this.value; f.err = ''; } });
+        }) : null,
+        el('div', { class: 'hint', style: 'margin:4px 0 8px', text: 'Wie tief ist die Frage?' }),
+        el('div', { class: 'chips', style: 'margin-bottom:10px' }, [1, 2, 3].map(function (l) {
+          return el('button', { class: 'chip' + (f.stufe === l ? ' sel' : ''), text: PLEVELS[l], onclick: function () { f.stufe = l; refresh(); } });
+        })),
+        el('div', { class: 'errtext', text: f.err }),
+        el('button', { class: 'btn primary', text: 'Frage hinzufügen', onclick: addQuestion })),
+      el('div', { class: 'card' }, el('div', { class: 'label', text: 'Deine Fragen (' + S.pq.length + ')' }), list));
+  }
+
 
   // ── Start ──────────────────────────────────────────────────────────────────
   function boot() { loadBase().then(function () { render(); }); }

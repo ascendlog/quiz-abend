@@ -1,0 +1,579 @@
+{
+ "version": 1,
+ "name": "Paarfragen Startpaket",
+ "fragen": [
+  {
+   "id": "p1-01",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Welche Jahreszeit magst du am liebsten?",
+   "optionen": [
+    "Frühling",
+    "Sommer",
+    "Herbst",
+    "Winter"
+   ]
+  },
+  {
+   "id": "p1-02",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Was wäre dein Traumurlaub?",
+   "optionen": [
+    "Strand und Meer",
+    "Berge und Natur",
+    "Städtetrip",
+    "Rundreise mit dem Auto"
+   ]
+  },
+  {
+   "id": "p1-03",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Wie startest du am liebsten in den Tag?",
+   "optionen": [
+    "Ausschlafen",
+    "Sport oder Spaziergang",
+    "Langes Frühstück",
+    "Möglichst schnell los"
+   ]
+  },
+  {
+   "id": "p1-04",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Vorlieben",
+   "frage": "Was ist dein absolutes Lieblingsessen?"
+  },
+  {
+   "id": "p1-05",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Vorlieben",
+   "frage": "Welches Lied oder welche Band hörst du immer wieder gern?"
+  },
+  {
+   "id": "p1-06",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Vorlieben",
+   "frage": "Welche Serie oder welchen Film könntest du immer wieder schauen?"
+  },
+  {
+   "id": "p1-07",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Wie verbringst du einen freien Abend am liebsten?",
+   "optionen": [
+    "Couch und Serie",
+    "Freunde treffen",
+    "Spiele spielen",
+    "Früh ins Bett"
+   ]
+  },
+  {
+   "id": "p1-08",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Was trinkst du am Morgen am liebsten?",
+   "optionen": [
+    "Kaffee",
+    "Tee",
+    "Kakao oder Saft",
+    "Einfach Wasser"
+   ]
+  },
+  {
+   "id": "p1-09",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Welche Superkraft hättest du gern?",
+   "optionen": [
+    "Fliegen",
+    "Unsichtbar sein",
+    "Gedanken lesen",
+    "Die Zeit anhalten"
+   ]
+  },
+  {
+   "id": "p1-10",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Vorlieben",
+   "frage": "Welches Tier wärst du gern – und warum?"
+  },
+  {
+   "id": "p1-11",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Morgenmensch oder Nachtmensch?",
+   "optionen": [
+    "Morgenmensch",
+    "Nachtmensch",
+    "Kommt auf den Tag an"
+   ]
+  },
+  {
+   "id": "p1-12",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Süß oder herzhaft?",
+   "optionen": [
+    "Süß",
+    "Herzhaft"
+   ]
+  },
+  {
+   "id": "p1-13",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Meer oder Berge?",
+   "optionen": [
+    "Meer",
+    "Berge"
+   ]
+  },
+  {
+   "id": "p1-14",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Welche Art Geschenk freut dich am meisten?",
+   "optionen": [
+    "Etwas Selbstgemachtes",
+    "Eine gemeinsame Unternehmung",
+    "Etwas, das ich mir gewünscht habe",
+    "Eine Überraschung"
+   ]
+  },
+  {
+   "id": "p1-15",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Vorlieben",
+   "frage": "Welchen Ort auf der Welt möchtest du unbedingt noch sehen?"
+  },
+  {
+   "id": "p1-16",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Wie sieht dein ideales Wochenende aus?",
+   "optionen": [
+    "Zu Hause entspannen",
+    "Ausflug in die Natur",
+    "Besuch oder Freunde treffen",
+    "Alles ein bisschen gemischt"
+   ]
+  },
+  {
+   "id": "p1-17",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Worüber musst du am meisten lachen?",
+   "optionen": [
+    "Wortwitz",
+    "Missgeschicke und Slapstick",
+    "Alltagssituationen",
+    "Absurder Humor"
+   ]
+  },
+  {
+   "id": "p1-18",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Erinnerungen",
+   "frage": "Was war als Kind dein Lieblingsspiel oder Lieblingsspielzeug?"
+  },
+  {
+   "id": "p1-19",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Alltag",
+   "frage": "Welches Gericht kochst du am liebsten?"
+  },
+  {
+   "id": "p1-20",
+   "stufe": 1,
+   "typ": "frei",
+   "thema": "Vorlieben",
+   "frage": "Welches Hobby würdest du gern einmal ausprobieren?"
+  },
+  {
+   "id": "p1-21",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Was machst du, wenn du nicht einschlafen kannst?",
+   "optionen": [
+    "Zum Handy greifen",
+    "Lesen",
+    "Aufstehen und etwas essen oder trinken",
+    "Liegen bleiben und abwarten"
+   ]
+  },
+  {
+   "id": "p1-22",
+   "stufe": 1,
+   "typ": "wahl",
+   "thema": "Vorlieben",
+   "frage": "Welches Frühstück ist dein Favorit?",
+   "optionen": [
+    "Brötchen mit Aufschnitt",
+    "Müsli oder Porridge",
+    "Süßes wie Pancakes oder Croissant",
+    "Rührei und Co."
+   ]
+  },
+  {
+   "id": "p2-01",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was war dein schönster Moment mit mir?"
+  },
+  {
+   "id": "p2-02",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Erinnerungen",
+   "frage": "Woran erinnerst du dich aus deiner Kindheit besonders gern?"
+  },
+  {
+   "id": "p2-03",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Erinnerungen",
+   "frage": "Wer hat dich als Kind am meisten geprägt?"
+  },
+  {
+   "id": "p2-04",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Alltag",
+   "frage": "Was hat dich in letzter Zeit zum Lachen gebracht?"
+  },
+  {
+   "id": "p2-05",
+   "stufe": 2,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Wie lädst du deine Batterien am besten auf?",
+   "optionen": [
+    "Allein sein und Ruhe haben",
+    "Zeit mit der Familie",
+    "Bewegung oder Natur",
+    "Freunde treffen"
+   ]
+  },
+  {
+   "id": "p2-06",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Welchen gemeinsamen Moment würdest du gern noch einmal erleben?"
+  },
+  {
+   "id": "p2-07",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Welche kleine Geste von mir macht dir den Tag schöner?"
+  },
+  {
+   "id": "p2-08",
+   "stufe": 2,
+   "typ": "wahl",
+   "thema": "Nähe",
+   "frage": "Woran merkst du am ehesten, dass dich jemand mag?",
+   "optionen": [
+    "An liebevollen Worten",
+    "An gemeinsamer Zeit",
+    "An Hilfe im Alltag",
+    "An Umarmungen und Berührung",
+    "An kleinen Geschenken"
+   ]
+  },
+  {
+   "id": "p2-09",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Erinnerungen",
+   "frage": "Was war das Mutigste, das du je gemacht hast?"
+  },
+  {
+   "id": "p2-10",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was hast du bei unserem ersten Treffen von mir gedacht?"
+  },
+  {
+   "id": "p2-11",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was hat dir an mir am Anfang besonders gefallen?"
+  },
+  {
+   "id": "p2-12",
+   "stufe": 2,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Wie gehst du am liebsten mit Stress um?",
+   "optionen": [
+    "Darüber reden",
+    "Mich zurückziehen",
+    "Bewegung oder Sport",
+    "Ablenkung durch Serie oder Spiel",
+    "Etwas Leckeres essen"
+   ]
+  },
+  {
+   "id": "p2-13",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Welcher Beruf hätte dich auch noch interessiert?"
+  },
+  {
+   "id": "p2-14",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Welches Lied erinnert dich an uns?"
+  },
+  {
+   "id": "p2-15",
+   "stufe": 2,
+   "typ": "wahl",
+   "thema": "Alltag",
+   "frage": "Wie viel Ruhe brauchst du nach einem anstrengenden Tag, bis du wieder gut ansprechbar bist?",
+   "optionen": [
+    "Gar keine",
+    "Etwa eine Viertelstunde",
+    "Ungefähr eine Stunde",
+    "Bis zum nächsten Morgen"
+   ]
+  },
+  {
+   "id": "p2-16",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Alltag",
+   "frage": "Welche Aufgabe im Haushalt machst du am liebsten – und welche gar nicht gern?"
+  },
+  {
+   "id": "p2-17",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Welche Familientradition ist dir besonders wichtig?"
+  },
+  {
+   "id": "p2-18",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Worauf bist du in deinem Leben stolz?"
+  },
+  {
+   "id": "p2-19",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was bewunderst du an unseren Kindern?"
+  },
+  {
+   "id": "p2-20",
+   "stufe": 2,
+   "typ": "wahl",
+   "thema": "Nähe",
+   "frage": "Was ist dir an einem gemeinsamen Abend wichtiger?",
+   "optionen": [
+    "Reden",
+    "Etwas zusammen unternehmen",
+    "Nebeneinander entspannen",
+    "Zeit für mich"
+   ]
+  },
+  {
+   "id": "p2-21",
+   "stufe": 2,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Welcher gemeinsame Urlaub oder Ausflug war für dich besonders schön – und warum?"
+  },
+  {
+   "id": "p2-22",
+   "stufe": 2,
+   "typ": "wahl",
+   "thema": "Nähe",
+   "frage": "Wodurch fühlst du dich am meisten geliebt?",
+   "optionen": [
+    "Durch liebevolle Worte",
+    "Durch gemeinsame Zeit",
+    "Durch Hilfe im Alltag",
+    "Durch Umarmungen und Berührung",
+    "Durch kleine Geschenke"
+   ]
+  },
+  {
+   "id": "p3-01",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Wofür bist du in unserer Beziehung am meisten dankbar?"
+  },
+  {
+   "id": "p3-02",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Wovon träumst du für die nächsten fünf Jahre?"
+  },
+  {
+   "id": "p3-03",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Was gibt dir Kraft, wenn es dir nicht gut geht?"
+  },
+  {
+   "id": "p3-04",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Was würde dir im Alltag guttun – und wie könnte ich dich dabei unterstützen?"
+  },
+  {
+   "id": "p3-05",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Wann fühlst du dich mir am nächsten?"
+  },
+  {
+   "id": "p3-06",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Welche drei Dinge sind dir im Leben am wichtigsten?"
+  },
+  {
+   "id": "p3-07",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Was hat dich in den letzten Jahren am meisten verändert?"
+  },
+  {
+   "id": "p3-08",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Worauf freust du dich in naher Zukunft?"
+  },
+  {
+   "id": "p3-09",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Was beschäftigt dich gerade, worüber du gern öfter sprechen würdest?"
+  },
+  {
+   "id": "p3-10",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Was würdest du deinem jüngeren Ich raten?"
+  },
+  {
+   "id": "p3-11",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was soll in unserer Beziehung auf keinen Fall verloren gehen?"
+  },
+  {
+   "id": "p3-12",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was würdest du gern mal wieder oder ganz neu mit mir zusammen machen?"
+  },
+  {
+   "id": "p3-13",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Was schätzt du an mir, das ich vielleicht gar nicht weiß?"
+  },
+  {
+   "id": "p3-14",
+   "stufe": 3,
+   "typ": "wahl",
+   "thema": "Nähe",
+   "frage": "Was brauchst du im Moment am meisten?",
+   "optionen": [
+    "Ruhe",
+    "Zeit zu zweit",
+    "Unterstützung im Alltag",
+    "Gespräche",
+    "Spaß und Leichtigkeit"
+   ]
+  },
+  {
+   "id": "p3-15",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Wie sieht für dich ein perfekter gemeinsamer Tag aus?"
+  },
+  {
+   "id": "p3-16",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Was bedeutet Familie für dich?"
+  },
+  {
+   "id": "p3-17",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Welche deiner Eigenschaften hättest du gern etwas stärker?"
+  },
+  {
+   "id": "p3-18",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Nähe",
+   "frage": "Wann hast du dich von mir wirklich unterstützt gefühlt?"
+  },
+  {
+   "id": "p3-19",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Wir beide",
+   "frage": "Was möchtest du mich schon lange einmal fragen?"
+  },
+  {
+   "id": "p3-20",
+   "stufe": 3,
+   "typ": "frei",
+   "thema": "Träume & Werte",
+   "frage": "Welches Ziel möchtest du in diesem Jahr noch erreichen?"
+  }
+ ]
+}
