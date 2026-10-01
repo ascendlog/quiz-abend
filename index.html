@@ -177,6 +177,10 @@
   .row:last-child { border-bottom: none; }
   .row .k { color: var(--ink-soft); }
   .row .v { font-weight: 600; text-align: right; }
+  .ans .atext { flex: 1; }
+  .ans .who { flex: 0 0 auto; max-width: 42%; text-align: right; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+  .ans.picked { border-color: var(--ink); background: var(--paper-warm); }
+  .codebig { font-size: 56px; font-weight: 300; letter-spacing: 0.18em; text-align: center; padding-left: 0.18em; line-height: 1.2; font-variant-numeric: tabular-nums; margin: 4px 0 10px; }
   .trophy { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
 </style>
 </head>
@@ -239,6 +243,10 @@
       imported: Array.isArray(s.imported) ? s.imported : [],
       catLabels: s.catLabels && typeof s.catLabels === 'object' ? s.catLabels : {},
       seen: Array.isArray(s.seen) ? s.seen : [],
+      recGids: Array.isArray(s.recGids) ? s.recGids : [],
+      myName: typeof s.myName === 'string' ? s.myName : '',
+      lastCode: typeof s.lastCode === 'string' ? s.lastCode : '',
+      live: s.live && s.live.L ? s.live : null,
       settings: Object.assign({}, DEFAULTS, st, { types: Object.assign({}, DEFAULTS.types, st.types || {}) }),
       game: s.game || null
     };
@@ -329,22 +337,24 @@
     if (S.seen.length > 1000) S.seen = S.seen.slice(-800);
   }
 
-  function takeStd() {
+  function takeStd(g) {
+    g = g || G;
     var kinds = [];
-    if (G.pool.mc.length) kinds.push('mc');
-    if (G.pool.tf.length) kinds.push('tf');
+    if (g.pool.mc.length) kinds.push('mc');
+    if (g.pool.tf.length) kinds.push('tf');
     if (!kinds.length) {
-      G.pool = makePool(G.settings);
-      if (G.pool.mc.length) kinds.push('mc');
-      if (G.pool.tf.length) kinds.push('tf');
+      g.pool = makePool(g.settings);
+      if (g.pool.mc.length) kinds.push('mc');
+      if (g.pool.tf.length) kinds.push('tf');
       if (!kinds.length) return null;
     }
     var kind = kinds.length === 2 ? (Math.random() < 0.25 ? 'tf' : 'mc') : kinds[0];
-    var q = G.pool[kind].shift(); markSeen(q); return q;
+    var q = g.pool[kind].shift(); markSeen(q); return q;
   }
-  function takeEst() {
-    if (!G.pool.est.length) { G.pool = makePool(G.settings); if (!G.pool.est.length) return null; }
-    var q = G.pool.est.shift(); markSeen(q); return q;
+  function takeEst(g) {
+    g = g || G;
+    if (!g.pool.est.length) { g.pool = makePool(g.settings); if (!g.pool.est.length) return null; }
+    var q = g.pool.est.shift(); markSeen(q); return q;
   }
 
   // ── Spiel ──────────────────────────────────────────────────────────────────
@@ -550,19 +560,19 @@
   }
 
   function bilanzKey(n) { return n.trim().toLowerCase(); }
+  function recordBilanz(names, scores) {
+    var a = scores[0], b = scores[1], win = a > b ? 0 : (b > a ? 1 : -1);
+    for (var i = 0; i < 2; i++) {
+      var k = bilanzKey(names[i]);
+      var r = S.bilanz[k] || { name: names[i], wins: 0, games: 0 };
+      r.name = names[i]; r.games++; if (win === i) r.wins++;
+      S.bilanz[k] = r;
+    }
+  }
   function finish() {
     stopTimer();
     G.over = true;
-    if (!G.recorded) {
-      G.recorded = true;
-      var a = G.scores[0], b = G.scores[1], win = a > b ? 0 : (b > a ? 1 : -1);
-      for (var i = 0; i < 2; i++) {
-        var k = bilanzKey(G.names[i]);
-        var r = S.bilanz[k] || { name: G.names[i], wins: 0, games: 0 };
-        r.name = G.names[i]; r.games++; if (win === i) r.wins++;
-        S.bilanz[k] = r;
-      }
-    }
+    if (!G.recorded) { G.recorded = true; recordBilanz(G.names, G.scores); }
     S.game = null; save();
     view = 'result'; render();
   }
@@ -572,9 +582,13 @@
 
   function render() {
     var node;
+    if (view === 'live' && !(loadError && !allQuestions().length)) { renderLive(); return; }
+    app.removeAttribute('data-lkey');
     if (loadError && !allQuestions().length) node = viewLoadError();
     else if (view === 'home') node = viewHome();
-    else if (view === 'setup') node = viewSetup();
+    else if (view === 'setup') node = viewSetup(false);
+    else if (view === 'lsetup') node = viewSetup(true);
+    else if (view === 'lmenu') node = viewLiveMenu();
     else if (view === 'play') node = viewPlay();
     else node = viewResult();
     app.replaceChildren(node);
@@ -597,11 +611,20 @@
     var bil = Object.keys(S.bilanz).map(function (k) { return S.bilanz[k]; })
       .sort(function (a, b) { return b.wins - a.wins || b.games - a.games; });
     var game = S.game && !S.game.over && S.game.queue && S.game.idx < S.game.queue.length ? S.game : null;
+    var live = S.live && S.live.L && S.live.L.names ? S.live : null;
     return el('div', null,
       header('Wissen für zwei'),
       notice ? el('div', { class: 'notice', text: notice }) : null,
       el('h1', null, 'Wer weiß ', el('strong', { text: 'mehr' }), '?'),
-      el('p', { class: 'lead', text: 'Abwechselnd Fragen beantworten, Joker nutzen, Punkte sammeln.' }),
+      el('p', { class: 'lead', text: 'Fragen beantworten, Joker nutzen, Punkte sammeln – gleichzeitig auf zwei Handys oder abwechselnd auf einem.' }),
+      live ? el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Zwei-Handy-Spiel läuft' }),
+        el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[0] }), el('span', { class: 'v', text: String(live.L.scores[0]) })),
+        el('div', { class: 'row' }, el('span', { class: 'k', text: live.L.names[1] }), el('span', { class: 'v', text: String(live.L.scores[1]) })),
+        el('div', { class: 'hint', text: 'Du bist Handy 1. Beim Fortsetzen wird der Raum mit dem alten Code wieder geöffnet.' }),
+        el('div', { class: 'btnrow', style: 'margin-top:12px' },
+          el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: resumeLive }),
+          el('button', { class: 'btn small', text: 'Verwerfen', onclick: function () { if (confirm('Das laufende Spiel verwerfen?')) { S.live = null; save(); render(); } } }))) : null,
       game ? el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Spiel läuft' }),
         el('div', { class: 'row' }, el('span', { class: 'k', text: game.names[0] }), el('span', { class: 'v', text: String(game.scores[0]) })),
@@ -609,7 +632,8 @@
         el('div', { class: 'btnrow', style: 'margin-top:12px' },
           el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: resumeGame }),
           el('button', { class: 'btn small', text: 'Verwerfen', onclick: function () { if (confirm('Das laufende Spiel verwerfen?')) { S.game = null; save(); render(); } } }))) : null,
-      el('button', { class: 'btn primary', text: 'Neues Spiel', onclick: function () { notice = ''; go('setup'); } }),
+      el('button', { class: 'btn primary', text: 'Zwei Handys – gleichzeitig', onclick: function () { notice = ''; go('lmenu'); } }),
+      el('button', { class: 'btn', text: 'Ein Handy – abwechselnd', onclick: function () { notice = ''; go('setup'); } }),
       bil.length ? el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Bilanz' }),
         el('table', null,
@@ -624,7 +648,7 @@
       el('div', { class: 'center' }, el('a', { class: 'linkbtn', href: 'verbindungstest.html', text: 'Verbindungstest' })));
   }
 
-  function viewSetup() {
+  function viewSetup(live) {
     var st = S.settings, all = allCatKeys(), sel = selectedCats();
     var pool = poolFor(Object.assign({}, st, { cats: sel }));
     var n = st.n;
@@ -643,10 +667,13 @@
     else if (st.mode === 'count' && pool.length < n) warn = 'Nur ' + pool.length + ' passende Fragen, einige wiederholen sich.';
 
     return el('div', null,
-      el('div', { class: 'topbar' }, header('Neues Spiel'),
-        el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { savePlayersSafe(); save(); go('home'); } })),
+      el('div', { class: 'topbar' }, header(live ? 'Zwei Handys' : 'Neues Spiel'),
+        el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { savePlayersSafe(); save(); go(live ? 'lmenu' : 'home'); } })),
       notice ? el('div', { class: 'notice', text: notice }) : null,
-      el('div', { class: 'card' },
+      live ? el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Spieler' }),
+        el('div', { class: 'info', style: 'margin:0', text: 'Du spielst als ' + myName() + '. Der Name von Handy 2 kommt beim Beitreten.' }))
+      : el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Spieler' }),
         el('input', { type: 'text', id: 'p0', placeholder: 'Spieler 1', maxlength: '16', autocomplete: 'off', value: names[0] || '', oninput: savePlayers }),
         el('input', { type: 'text', id: 'p1', placeholder: 'Spieler 2', maxlength: '16', autocomplete: 'off', value: names[1] || '', oninput: savePlayers })),
@@ -684,9 +711,12 @@
               el('button', { text: '−', 'aria-label': 'Weniger Punkte', onclick: function () { update(function () { st.target = Math.max(50, st.target - 50); }); } }),
               el('div', { class: 'val' }, String(st.target), el('span', { class: 'unit', text: 'Punkte' })),
               el('button', { text: '+', 'aria-label': 'Mehr Punkte', onclick: function () { update(function () { st.target = Math.min(300, st.target + 50); }); } })),
-        el('div', { class: 'hint', text: st.mode === 'count' ? 'Beide bekommen gleich viele Fragen.' : 'Es endet, sobald nach einer vollen Runde jemand das Ziel erreicht hat.' })),
+        el('div', { class: 'hint', text: live
+          ? (st.mode === 'count' ? 'Jede Frage beantworten beide gleichzeitig.' : 'Es endet, sobald jemand das Ziel erreicht hat und kein Gleichstand herrscht.')
+          : (st.mode === 'count' ? 'Beide bekommen gleich viele Fragen.' : 'Es endet, sobald nach einer vollen Runde jemand das Ziel erreicht hat.') })),
       el('div', { class: 'hint' + (warn ? ' warn' : ''), style: 'margin:0 0 14px', text: warn || (pool.length + ' passende Fragen') }),
-      el('button', { class: 'btn primary', text: 'Spiel starten', disabled: !canStart, onclick: function () {
+      el('button', { class: 'btn primary', text: live ? 'Raum erstellen' : 'Spiel starten', disabled: !canStart, onclick: function () {
+        if (live) { st.cats = selectedCats().length === all.length ? null : selectedCats(); save(); hostRoom(Object.assign({}, st)); return; }
         var a = (document.getElementById('p0').value || '').trim() || 'Spieler 1';
         var b = (document.getElementById('p1').value || '').trim() || 'Spieler 2';
         if (bilanzKey(a) === bilanzKey(b)) { notice = 'Bitte zwei verschiedene Namen eingeben.'; render(); return; }
@@ -909,6 +939,873 @@
     var a = document.createElement('a'); a.href = url; a.download = fname;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Zwei Handys: Verbindung, Spielstand auf Handy 1 (Host), Ansicht auf beiden
+  // ═══════════════════════════════════════════════════════════════════════════
+  var APP_PREFIX = 'qa-ascend-';
+  var PEER_URL = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+
+  function newNet() {
+    return { role: null, peer: null, conn: null, code: '', left: false, up: false, everUp: false,
+             lastRx: 0, connStart: 0, hb: null, rc: null, rcTries: 0, msg: '', route: '', resume: false };
+  }
+  var net = newNet();
+  var L = null;      // Spielstand (nur auf Handy 1)
+  var LV = null;     // Ansichtsmodell für dieses Handy
+  var lui = {};      // lokaler Zustand der Live-Ansicht
+  var lwatch = null, ltimer = null, wakeLock = null;
+
+  function myName() { return String(S.myName || '').trim().slice(0, 16); }
+  function cleanName(n) { return String(n || '').trim().slice(0, 16); }
+  function randomCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+  function newGid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function loadPeerLib() {
+    if (window.Peer) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = PEER_URL;
+      sc.onload = function () { window.Peer ? resolve() : reject(new Error('lib')); };
+      sc.onerror = function () { reject(new Error('lib')); };
+      document.head.appendChild(sc);
+    });
+  }
+
+  function errorText(err) {
+    var t = err && err.type;
+    if (t === 'peer-unavailable') return 'Raum nicht gefunden. Läuft Handy 1 schon?';
+    if (t === 'network' || t === 'socket-error' || t === 'socket-closed') return 'Keine Verbindung zum Vermittlungsserver. Internet prüfen.';
+    if (t === 'server-error') return 'Der Vermittlungsserver antwortet nicht.';
+    if (t === 'browser-incompatible') return 'Dieser Browser unterstützt die Verbindung nicht.';
+    if (t === 'webrtc') return 'Direkte Verbindung fehlgeschlagen.';
+    return 'Fehler: ' + (t || (err && err.message) || 'unbekannt');
+  }
+
+  function netMsg(t) { net.msg = t; if (view === 'live') renderLive(); }
+  function netSend(obj) {
+    var c = net.conn;
+    if (c && c.open) { try { c.send(obj); return true; } catch (e) {} }
+    return false;
+  }
+
+  // ── Bildschirm wach halten ─────────────────────────────────────────────────
+  function requestWake() {
+    try {
+      if (!('wakeLock' in navigator)) return;
+      if (wakeLock && !wakeLock.released) return;
+      navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }).catch(function () {});
+    } catch (e) {}
+  }
+
+  // ── Verbindung ─────────────────────────────────────────────────────────────
+  function attachConn(c) {
+    if (net.conn && net.conn !== c) { var old = net.conn; net.conn = null; try { old.close(); } catch (e) {} }
+    net.conn = c; net.connStart = Date.now();
+    c.on('open', function () {
+      if (net.conn !== c) return;
+      c._was = true;
+      net.lastRx = Date.now(); net.rcTries = 0; net.up = true; net.everUp = true;
+      startHb(); requestWake();
+      setTimeout(detectRoute, 1500);
+      if (net.role === 'guest') {
+        lui.awaitSync = true;
+        netSend({ t: 'hi', name: myName() });
+        netMsg('Verbunden. Warte auf Handy 1 …');
+      } else renderLive();
+    });
+    c.on('data', function (d) { if (net.conn === c) onNetData(d); });
+    c.on('close', function () {
+      if (net.conn !== c) return;
+      if (net.up) linkDown('close');
+      else if (net.role === 'guest') scheduleReconnect(1500);
+    });
+    c.on('error', function () {
+      if (net.conn !== c) return;
+      if (!net.up && net.role === 'guest') scheduleReconnect(2000);
+    });
+  }
+
+  function linkDown(reason, msg) {
+    if (!net.up) return;
+    net.up = false; stopHb(); lStopTimer();
+    var c = net.conn; if (c) { try { c.close(); } catch (e) {} }
+    if (net.role === 'host') {
+      net.msg = msg || 'Warte auf Handy 2 …';
+      lGuestGone(reason);
+    } else {
+      net.msg = msg || 'Verbindung unterbrochen. Verbinde neu …';
+      scheduleReconnect(1000);
+    }
+    renderLive();
+  }
+
+  function startHb() {
+    stopHb();
+    net.hb = setInterval(function () {
+      if (!net.conn || !net.conn.open || !net.up) return;
+      netSend({ t: 'ping', n: Date.now() });
+      if (Date.now() - net.lastRx > 7000) linkDown('silence');
+    }, 2000);
+  }
+  function stopHb() { if (net.hb) { clearInterval(net.hb); net.hb = null; } }
+
+  function checkAlive() {
+    if (!net.conn || !net.conn.open || !net.up) return;
+    var t0 = Date.now();
+    netSend({ t: 'ping', n: t0 });
+    setTimeout(function () { if (!net.left && net.up && net.lastRx < t0) linkDown('silence'); }, 3500);
+  }
+
+  function detectRoute() {
+    var c = net.conn;
+    if (!c || !c.peerConnection || !c.peerConnection.getStats) return;
+    c.peerConnection.getStats().then(function (stats) {
+      var byId = {}, pair = null;
+      stats.forEach(function (r) { byId[r.id] = r; });
+      stats.forEach(function (r) { if (r.type === 'transport' && r.selectedCandidatePairId) pair = byId[r.selectedCandidatePairId]; });
+      if (!pair) stats.forEach(function (r) { if (r.type === 'candidate-pair' && (r.selected || (r.nominated && r.state === 'succeeded'))) pair = r; });
+      if (!pair) return;
+      var a = byId[pair.localCandidateId], b = byId[pair.remoteCandidateId];
+      var lt = a && a.candidateType, rt = b && b.candidateType;
+      net.route = (lt === 'host' && rt === 'host') ? 'direkt im WLAN' : ((lt === 'relay' || rt === 'relay') ? 'über Relay-Server' : 'über den Router');
+      if (view === 'live') renderLive();
+    }).catch(function () {});
+  }
+
+  function onNetData(d) {
+    if (!d || typeof d !== 'object') return;
+    net.lastRx = Date.now();
+    switch (d.t) {
+      case 'ping': netSend({ t: 'pong', n: d.n }); break;
+      case 'hi': if (net.role === 'host') onGuestHi(d); break;
+      case 'act': if (net.role === 'host') lAct(1, d); break;
+      case 'v': if (net.role === 'guest' && d.v) localApply(d.v); break;
+      case 'busy':
+        if (net.role === 'guest') { netMsg('Der Raum ist gerade belegt. Ich versuche es gleich noch einmal …'); scheduleReconnect(3000); }
+        break;
+      case 'rej':
+        if (net.role === 'guest') leaveLive(false, d.why === 'name' ? 'Dieser Name ist im Raum schon vergeben. Bitte einen anderen Namen wählen.' : 'In diesem Raum läuft schon ein Spiel mit anderen Spielern.');
+        break;
+      case 'bye':
+        if (net.role === 'guest') leaveLive(false, (LV && LV.names ? LV.names[0] : 'Handy 1') + ' hat das Spiel beendet.');
+        else if (net.role === 'host') linkDown('bye', (L && L.names[1] ? L.names[1] : 'Handy 2') + ' hat das Spiel verlassen. Der Raum bleibt offen.');
+        break;
+    }
+  }
+
+  // ── Raum erstellen (Handy 1) ───────────────────────────────────────────────
+  function hostRoom(st, sv) {
+    requestWake();
+    loadPeerLib().then(function () {
+      net = newNet(); net.role = 'host';
+      lui = {};
+      if (sv) {
+        net.code = sv.code; net.resume = true;
+        L = sv.L; L.pool = makePool(L.settings); L.paused = false;
+        if (L.queue[L.idx]) L.it = L.queue[L.idx];
+        if (L.phase === 'ask') { L.ans = [null, null]; lBeginQ(); }
+        if (L.phase === 'feedback') L.ready = [false, false];
+        net.msg = 'Raum ' + net.code + ' wird wieder geöffnet. Handy 2 verbindet sich automatisch oder tritt mit dem Code neu bei.';
+      } else {
+        net.code = randomCode();
+        lNew(st, myName());
+        net.msg = 'Verbinde mit dem Vermittlungsserver …';
+      }
+      LV = buildV(0); lui.qk = LV.qk;
+      view = 'live'; startHost(0); render();
+    }).catch(function () {
+      notice = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; go('lmenu');
+    });
+  }
+
+  function startHost(attempt) {
+    var pr = new Peer(APP_PREFIX + net.code, { debug: 1 });
+    net.peer = pr;
+    pr.on('open', function () {
+      if (net.peer !== pr || net.left) return;
+      if (!net.up) netMsg('Raum ' + net.code + ' ist offen. Warte auf Handy 2 …');
+    });
+    pr.on('connection', function (c) {
+      if (net.peer !== pr || net.left) return;
+      var same = net.conn && net.conn.peer === c.peer;
+      var alive = net.conn && net.up && (Date.now() - net.lastRx < 8000);
+      if (alive && !same) {
+        c.on('open', function () { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(function () { try { c.close(); } catch (e) {} }, 300); });
+        return;
+      }
+      attachConn(c);
+    });
+    pr.on('disconnected', function () {
+      if (net.peer !== pr || net.left) return;
+      try { pr.reconnect(); } catch (e) {}
+    });
+    pr.on('error', function (err) {
+      if (net.peer !== pr || net.left) return;
+      if (err && err.type === 'unavailable-id') {
+        try { pr.destroy(); } catch (e) {}
+        if (net.resume && attempt < 12) { setTimeout(function () { if (!net.left) startHost(attempt + 1); }, 2500); return; }
+        if (!net.resume && attempt < 5) { net.code = randomCode(); startHost(attempt + 1); return; }
+      }
+      netMsg(errorText(err));
+    });
+  }
+
+  // ── Beitreten (Handy 2) ────────────────────────────────────────────────────
+  function joinRoom(code) {
+    requestWake();
+    loadPeerLib().then(function () {
+      net = newNet(); net.role = 'guest'; net.code = code;
+      S.lastCode = code; save();
+      L = null; LV = null; lui = {};
+      net.msg = 'Verbinde mit dem Vermittlungsserver …';
+      view = 'live'; makeGuestPeer(); render();
+    }).catch(function () {
+      notice = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; go('lmenu');
+    });
+  }
+
+  function makeGuestPeer() {
+    if (net.peer && !net.peer.destroyed) { try { net.peer.destroy(); } catch (e) {} }
+    var pr = new Peer({ debug: 1 });
+    net.peer = pr;
+    pr.on('open', function () {
+      if (net.peer !== pr || net.left) return;
+      if (!net.up) netMsg('Suche Raum ' + net.code + ' …');
+      if (!(net.conn && net.conn.open)) connectToHost();
+    });
+    pr.on('disconnected', function () {
+      if (net.peer !== pr || net.left) return;
+      scheduleReconnect(1000);
+    });
+    pr.on('error', function (err) {
+      if (net.peer !== pr || net.left) return;
+      if (err && err.type === 'peer-unavailable') {
+        if (!net.up) netMsg('Raum ' + net.code + ' nicht gefunden. Läuft Handy 1 schon? Ich versuche es weiter …');
+        scheduleReconnect(3000);
+        return;
+      }
+      if (!net.up) netMsg(errorText(err));
+      scheduleReconnect(3000);
+    });
+  }
+
+  function connectToHost() {
+    if (!net.peer || net.peer.destroyed || net.peer.disconnected) return;
+    if (net.conn && !net.conn.open && !net.conn._was && Date.now() - net.connStart < 8000) return;
+    attachConn(net.peer.connect(APP_PREFIX + net.code, { reliable: true, serialization: 'json' }));
+  }
+
+  function scheduleReconnect(delay) {
+    if (net.role !== 'guest' || net.rc || net.left) return;
+    net.rc = setTimeout(function () {
+      net.rc = null;
+      if (net.left || (net.conn && net.conn.open && net.up)) { net.rcTries = 0; return; }
+      if (net.rcTries >= 25) { netMsg('Keine Verbindung mehr. Bitte „Beenden“ tippen und neu beitreten.'); return; }
+      net.rcTries++;
+      doReconnect();
+      scheduleReconnect(3000);
+    }, delay);
+  }
+
+  function doReconnect() {
+    if (net.role !== 'guest') return;
+    if (!net.peer || net.peer.destroyed) { makeGuestPeer(); return; }
+    if (net.peer.disconnected) { try { net.peer.reconnect(); } catch (e) {} return; }
+    connectToHost();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!net.role || net.left) return;
+    if (document.visibilityState !== 'visible') return;
+    setTimeout(function () {
+      if (net.left) return;
+      if (net.conn && net.conn.open && net.up) { checkAlive(); requestWake(); }
+      else if (net.role === 'guest') scheduleReconnect(300);
+      if (net.peer && net.peer.disconnected) { try { net.peer.reconnect(); } catch (e) {} }
+    }, 800);
+  });
+
+  function leaveLive(tell, text) {
+    net.left = true;
+    if (tell) netSend({ t: 'bye' });
+    stopHb(); lStopTimer(); clearTimeout(lwatch);
+    if (net.rc) { clearTimeout(net.rc); net.rc = null; }
+    var c = net.conn, pr = net.peer, wl = wakeLock; wakeLock = null;
+    setTimeout(function () {
+      try { if (c) c.close(); } catch (e) {}
+      try { if (pr) pr.destroy(); } catch (e) {}
+    }, tell ? 250 : 0);
+    try { if (wl) wl.release(); } catch (e) {}
+    if (net.role === 'host') { S.live = null; save(); }
+    net = newNet(); net.left = true;
+    L = null; LV = null; lui = {};
+    notice = text || '';
+    go(text && /Namen|Spielern/.test(text) ? 'lmenu' : 'home');
+  }
+
+  // ═══ Spielstand auf Handy 1 ═════════════════════════════════════════════════
+  function lNew(st, hostName) {
+    L = {
+      gid: newGid(), settings: clone(st), names: [hostName, ''], phase: 'lobby',
+      scores: [0, 0], right: [0, 0], stdAsked: [0, 0], estWins: [0, 0],
+      jokers: [{ fifty: 1, swap: 1 }, { fifty: 1, swap: 1 }],
+      queue: [], idx: 0, rounds: 0, it: null, order: null, ans: [null, null], hidden: [[], []],
+      ready: [false, false], res: null, total: 0, deadline: 0, paused: false, pausedLeft: 0,
+      allowEst: false, allowStd: false, pool: null
+    };
+  }
+
+  function lStartGame() {
+    var st = L.settings, pool = poolFor(st);
+    L.allowEst = pool.some(function (q) { return q.typ === 'est'; });
+    L.allowStd = pool.some(function (q) { return q.typ !== 'est'; });
+    L.gid = newGid(); L.scores = [0, 0]; L.right = [0, 0]; L.stdAsked = [0, 0]; L.estWins = [0, 0];
+    L.jokers = [{ fifty: 1, swap: 1 }, { fifty: 1, swap: 1 }];
+    L.queue = []; L.idx = 0; L.rounds = 0;
+    L.pool = makePool(st);
+    if (st.mode === 'count') lBuildQueue(); else lExtend();
+    if (!L.queue.length) { L.phase = 'lobby'; return false; }
+    lAsk();
+    return true;
+  }
+
+  function lBuildQueue() {
+    var n = L.settings.n, estCount = L.pool.est.length, e = 0;
+    if (L.allowEst && !L.allowStd) e = Math.min(n, estCount);
+    else if (L.allowEst) e = Math.min(Math.round(n * 0.2), estCount);
+    var tokens = [], i;
+    for (i = 0; i < e; i++) tokens.push('E');
+    for (i = 0; i < (L.allowStd ? n - e : 0); i++) tokens.push('S');
+    shuffle(tokens).forEach(function (t) {
+      var q = t === 'E' ? takeEst(L) : takeStd(L);
+      if (q) L.queue.push({ q: q });
+    });
+  }
+
+  function lExtend() {
+    L.rounds++;
+    var q = null;
+    if (L.allowEst && (!L.allowStd || Math.random() < 0.2)) q = takeEst(L);
+    if (!q && L.allowStd) q = takeStd(L);
+    if (q) L.queue.push({ q: q });
+  }
+
+  function lBeginQ() {
+    var q = L.it.q;
+    L.order = q.typ === 'mc' ? shuffle([0, 1, 2, 3]) : null;
+    L.hidden = [[], []];
+    L.total = TIME[q.typ] * 1000;
+    if (net.up) { L.paused = false; L.deadline = Date.now() + L.total; lArmWatch(); }
+    else { L.paused = true; L.pausedLeft = L.total; clearTimeout(lwatch); }
+  }
+
+  function lAsk() {
+    L.it = L.queue[L.idx];
+    L.phase = 'ask'; L.ans = [null, null]; L.ready = [false, false]; L.res = null;
+    lBeginQ();
+    lPush();
+  }
+
+  function lArmWatch() {
+    clearTimeout(lwatch);
+    if (!L || L.phase !== 'ask' || L.paused) return;
+    lwatch = setTimeout(lWatch, Math.max(0, L.deadline - Date.now()) + 3000);
+  }
+  function lWatch() {
+    if (!L || L.phase !== 'ask' || L.paused) return;
+    for (var p = 0; p < 2; p++) if (!L.ans[p]) L.ans[p] = { v: null, left: 0, timeout: true };
+    lResolve();
+  }
+
+  function lGuestGone(reason) {
+    if (!L) return;
+    if (L.phase === 'ask' && !L.paused) {
+      L.paused = true;
+      L.pausedLeft = Math.max(0, L.deadline - (reason === 'silence' ? net.lastRx : Date.now()));
+      clearTimeout(lwatch);
+    }
+    lPush();
+  }
+  function lResume() {
+    if (!L || !L.paused) return;
+    L.paused = false; L.deadline = Date.now() + L.pausedLeft; lArmWatch();
+  }
+
+  function onGuestHi(d) {
+    if (!L) return;
+    var name = cleanName(d.name) || 'Spieler 2';
+    var running = L.phase === 'ask' || L.phase === 'feedback' || L.phase === 'over';
+    if (bilanzKey(name) === bilanzKey(L.names[0])) { netSend({ t: 'rej', why: 'name' }); setTimeout(function () { try { net.conn.close(); } catch (e) {} }, 300); net.up = false; return; }
+    if (running && L.names[1] && bilanzKey(name) !== bilanzKey(L.names[1])) { netSend({ t: 'rej', why: 'running' }); setTimeout(function () { try { net.conn.close(); } catch (e) {} }, 300); net.up = false; return; }
+    L.names[1] = name;
+    net.msg = name + ' ist verbunden.';
+    if (L.paused) lResume();
+    lPush();
+  }
+
+  function lAct(p, m) {
+    if (!L || !m) return;
+    var a = m.a, q = L.it && L.it.q, left;
+    if (a === 'answer' || a === 'guess' || a === 'timeout') {
+      if (L.phase !== 'ask' || L.paused || L.ans[p]) return;
+      left = Math.min(L.total, Math.max(0, Math.round(Number(m.left) || 0)));
+      if (a === 'timeout') L.ans[p] = { v: null, left: 0, timeout: true };
+      else if (a === 'answer' && q.typ === 'mc') {
+        var d = Number(m.i);
+        if (!(d >= 0 && d <= 3) || L.hidden[p].indexOf(L.order[d]) >= 0) return;
+        L.ans[p] = { v: L.order[d], left: left };
+      } else if (a === 'answer' && q.typ === 'tf') {
+        if (typeof m.i !== 'boolean') return;
+        L.ans[p] = { v: m.i, left: left };
+      } else if (a === 'guess' && q.typ === 'est') {
+        var g = Number(m.v);
+        if (m.v === null || m.v === '' || !isFinite(g)) return;
+        L.ans[p] = { v: g, left: left };
+      } else return;
+      if (L.ans[0] && L.ans[1]) lResolve(); else lPush();
+    } else if (a === 'fifty') {
+      var J = L.jokers[p];
+      if (L.phase !== 'ask' || L.paused || q.typ !== 'mc' || J.fifty < 1 || L.ans[p] || L.hidden[p].length) return;
+      var wrong = [0, 1, 2, 3].filter(function (i) { return i !== q.richtig; });
+      L.hidden[p] = shuffle(wrong).slice(0, 2); J.fifty--;
+      lPush();
+    } else if (a === 'swap') {
+      var K = L.jokers[p];
+      if (L.phase !== 'ask' || L.paused || K.swap < 1 || L.ans[0] || L.ans[1] || q.typ === 'est') return;
+      var nq = takeStd(L); if (!nq) return;
+      L.it.q = nq; K.swap--;
+      lBeginQ(); lPush();
+    } else if (a === 'next') {
+      if (L.phase !== 'feedback') return;
+      L.ready[p] = true;
+      if (L.ready[0] && L.ready[1]) lAdvance(); else lPush();
+    } else if (a === 'rematch') {
+      if (L.phase !== 'over') return;
+      L.ready[p] = true;
+      if (L.ready[0] && L.ready[1]) { if (!lStartGame()) lPush(); } else lPush();
+    }
+  }
+
+  function lResolve() {
+    clearTimeout(lwatch);
+    var q = L.it.q, A = L.ans, res = [{}, {}], i;
+    if (q.typ === 'est') {
+      var diff = A.map(function (x) { return x.v === null ? Infinity : Math.abs(x.v - q.richtig); });
+      var best = Math.min(diff[0], diff[1]);
+      for (i = 0; i < 2; i++) {
+        var pts = 0, ex = false;
+        if (isFinite(diff[i]) && diff[i] === best) { pts += POINTS; L.estWins[i]++; }
+        if (isFinite(diff[i]) && diff[i] <= q.toleranz + 1e-9) { pts += EXACT_BONUS; ex = true; }
+        L.scores[i] += pts;
+        res[i] = { g: A[i].v, diff: isFinite(diff[i]) ? diff[i] : null, pts: pts, exact: ex };
+      }
+    } else {
+      for (i = 0; i < 2; i++) {
+        var a = A[i], ok = !a.timeout && a.v === q.richtig;
+        var bonus = ok ? Math.round(BONUS_MAX * a.left / L.total) : 0;
+        var pt = ok ? POINTS + bonus : 0;
+        L.scores[i] += pt; L.stdAsked[i]++; if (ok) L.right[i]++;
+        res[i] = { correct: ok, timeout: !!a.timeout, pts: pt, bonus: bonus };
+      }
+    }
+    L.res = res; L.phase = 'feedback'; L.ready = [false, false];
+    lPush();
+  }
+
+  function lAdvance() {
+    L.idx++;
+    if (L.settings.mode === 'count') {
+      if (L.idx >= L.queue.length) return lFinish();
+    } else {
+      var a = L.scores[0], b = L.scores[1];
+      if ((Math.max(a, b) >= L.settings.target && a !== b) || L.rounds >= 60) return lFinish();
+      if (L.idx >= L.queue.length) lExtend();
+      if (L.idx >= L.queue.length) return lFinish();
+    }
+    lAsk();
+  }
+
+  function lFinish() {
+    clearTimeout(lwatch);
+    L.phase = 'over'; L.ready = [false, false]; L.it = null;
+    S.live = null; save();
+    lPush();
+  }
+
+  function persistLive() {
+    if (!L || L.phase === 'lobby' || L.phase === 'over') return;
+    var c = Object.assign({}, L); delete c.pool;
+    S.live = { code: net.code, L: c }; save();
+  }
+
+  function lPush() {
+    persistLive();
+    var mine = buildV(0);
+    localApply(mine);
+    if (net.up) netSend({ t: 'v', v: buildV(1) });
+  }
+
+  function resumeLive() {
+    var sv = S.live;
+    if (!sv || !sv.L) return;
+    hostRoom(null, sv);
+  }
+
+  // ── Ansichtsmodell ─────────────────────────────────────────────────────────
+  function settingsRows(st) {
+    var types = ['mc', 'tf', 'est'].filter(function (t) { return st.types[t]; }).map(function (t) { return TYPE_LABELS[t]; }).join(', ');
+    return [
+      ['Kategorien', st.cats === null ? 'Alle' : st.cats.map(catLabel).join(', ')],
+      ['Schwierigkeit', LEVELS[st.level]],
+      ['Fragetypen', types],
+      ['Spielende', st.mode === 'count' ? st.n + ' Fragen' : 'Ziel ' + st.target + ' Punkte']
+    ];
+  }
+
+  function buildV(p) {
+    var o = 1 - p;
+    var v = { phase: L.phase, me: p, names: L.names.slice(), scores: L.scores.slice(), qk: L.phase, hidden: [],
+              ready: L.ready.slice(), jk: { fifty: 0, swap: 0 }, my: null, oppDone: false, paused: false,
+              left: 0, total: 0, canSwap: false, gid: L.gid };
+    if (L.phase === 'lobby') { v.set = settingsRows(L.settings); return v; }
+    if (L.phase === 'over') {
+      v.qk = 'over:' + L.gid;
+      v.final = { right: L.right.slice(), stdAsked: L.stdAsked.slice(), estWins: L.estWins.slice() };
+      return v;
+    }
+    var q = L.it.q;
+    v.qk = L.idx + ':' + q.id;
+    v.prog = L.settings.mode === 'count' ? 'Frage ' + (L.idx + 1) + ' von ' + L.queue.length : 'Runde ' + (L.idx + 1) + ' · Ziel ' + L.settings.target + ' Punkte';
+    v.q = { typ: q.typ, frage: q.frage, meta: metaLine(q), einheit: q.einheit || '' };
+    if (q.typ === 'mc') v.q.opts = L.order.map(function (i) { return q.antworten[i]; });
+    v.jk = clone(L.jokers[p]);
+    v.hidden = L.hidden[p].map(function (i) { return L.order.indexOf(i); });
+    var a = L.ans[p];
+    if (a) v.my = { v: q.typ === 'mc' ? (a.v === null ? null : L.order.indexOf(a.v)) : a.v, timeout: !!a.timeout };
+    v.oppDone = !!L.ans[o];
+    if (L.phase === 'ask') {
+      v.paused = !!L.paused; v.total = L.total;
+      v.left = L.paused ? L.pausedLeft : Math.max(0, L.deadline - Date.now());
+      v.canSwap = !L.paused && L.jokers[p].swap > 0 && !L.ans[0] && !L.ans[1] && q.typ !== 'est';
+    } else {
+      if (q.typ === 'est') v.fb = { typ: 'est', right: q.richtig, einheit: q.einheit || '', res: L.res, info: q.info || '' };
+      else v.fb = {
+        typ: q.typ, info: q.info || '',
+        right: q.typ === 'mc' ? L.order.indexOf(q.richtig) : q.richtig,
+        choice: L.ans.map(function (x) { return q.typ === 'mc' ? (x.v === null ? null : L.order.indexOf(x.v)) : x.v; }),
+        res: L.res
+      };
+    }
+    return v;
+  }
+
+  // Wird auf beiden Handys aufgerufen, sobald ein neues Ansichtsmodell vorliegt.
+  function localApply(v) {
+    LV = v;
+    if (v.qk !== lui.qk) { lui.qk = v.qk; lui.sent = false; lui.pick = null; lui.draft = ''; lui.guess = null; }
+    if (lui.awaitSync) { lui.awaitSync = false; lui.sent = !!v.my; }
+    if (v.phase === 'over') recordResult(v.gid, v.names, v.scores);
+    lStartTimer(v);
+    renderLive();
+  }
+
+  function recordResult(gid, names, scores) {
+    if (!gid || S.recGids.indexOf(gid) >= 0) return;
+    S.recGids.push(gid); if (S.recGids.length > 12) S.recGids.shift();
+    recordBilanz(names, scores); save();
+  }
+
+  // ── Timer der Live-Ansicht ─────────────────────────────────────────────────
+  function lStartTimer(v) {
+    lStopTimer();
+    lui.total = v.total; lui.left = v.left; lui.endsAt = Date.now() + v.left;
+    if (v.phase !== 'ask' || v.paused) return;
+    if (net.role === 'guest' && !net.up) return;
+    ltimer = setInterval(lTick, 100);
+  }
+  function lStopTimer() { if (ltimer) { clearInterval(ltimer); ltimer = null; } }
+  function lTick() {
+    var v = LV;
+    if (!v || v.phase !== 'ask') { lStopTimer(); return; }
+    lui.left = Math.max(0, lui.endsAt - Date.now());
+    lPaintTimer();
+    if (lui.left <= 0) {
+      lStopTimer();
+      if (!(v.my || lui.sent)) { lui.sent = true; lSend({ a: 'timeout' }); }
+    }
+  }
+  function lPaintTimer() {
+    var bar = document.getElementById('tbar'), lab = document.getElementById('tlab');
+    if (!bar || !lui.total) return;
+    var left = lui.left;
+    bar.style.width = (left / lui.total * 100) + '%';
+    bar.className = 'tbar' + (left < 5000 ? ' low' : '');
+    if (lab) lab.textContent = Math.ceil(left / 1000);
+  }
+
+  // ── Aktionen dieses Handys ─────────────────────────────────────────────────
+  function lSend(m) {
+    m.t = 'act';
+    if (net.role === 'host') { lAct(0, m); return true; }
+    return netSend(m);
+  }
+  function canAct(v) { return v.phase === 'ask' && !v.paused && !(v.my || lui.sent) && (net.role === 'host' || net.up); }
+  function lAnswer(i) {
+    var v = LV; if (!v || !canAct(v)) return;
+    var left = Math.max(0, Math.round(lui.endsAt - Date.now()));
+    if (lSend({ a: 'answer', i: i, left: left })) { lui.sent = true; lui.pick = i; renderLive(); }
+  }
+  function lGuess(val) {
+    var v = LV; if (!v || !canAct(v)) return;
+    var left = Math.max(0, Math.round(lui.endsAt - Date.now()));
+    lui.guess = val;
+    if (lSend({ a: 'guess', v: val, left: left })) { lui.sent = true; renderLive(); }
+  }
+  function leaveAsk() {
+    var inGame = LV && (LV.phase === 'ask' || LV.phase === 'feedback');
+    var msg = inGame ? 'Spiel beenden? Der Stand geht verloren.' : 'Raum verlassen?';
+    if (confirm(msg)) leaveLive(true, '');
+  }
+
+  // ── Ansichten ──────────────────────────────────────────────────────────────
+  function viewLiveMenu() {
+    var nameIn = el('input', { type: 'text', id: 'lname', placeholder: 'Dein Name', maxlength: '16', autocomplete: 'off',
+      value: S.myName || S.names[0] || '', oninput: function () { S.myName = this.value; save(); } });
+    var codeIn = el('input', { type: 'text', id: 'lcode', class: 'big', inputmode: 'numeric', maxlength: '4', placeholder: 'Code', autocomplete: 'off',
+      value: S.lastCode || '', oninput: function () { this.value = this.value.replace(/\D/g, '').slice(0, 4); err.textContent = ''; } });
+    var err = el('div', { class: 'errtext', id: 'lerr', text: '' });
+    function name() {
+      var n = cleanName(nameIn.value);
+      if (!n) { err.textContent = 'Bitte zuerst deinen Namen eintragen.'; return null; }
+      S.myName = n; save(); return n;
+    }
+    return el('div', null,
+      el('div', { class: 'topbar' }, header('Zwei Handys'),
+        el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { go('home'); } })),
+      notice ? el('div', { class: 'notice', text: notice }) : null,
+      el('p', { class: 'lead', text: 'Beide Handys brauchen Internet, am besten im selben WLAN. Ihr beantwortet jede Frage gleichzeitig.' }),
+      el('div', { class: 'card' }, el('div', { class: 'label', text: 'Dein Name' }), nameIn, err),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Handy 1 – Spiel einrichten' }),
+        el('button', { class: 'btn primary', text: 'Raum erstellen', onclick: function () { if (name()) { notice = ''; go('lsetup'); } } })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Handy 2 – Spiel beitreten' }),
+        codeIn,
+        el('button', { class: 'btn primary', text: 'Beitreten', onclick: function () {
+          var n = name(); if (!n) return;
+          var c = codeIn.value.replace(/\D/g, '');
+          if (c.length !== 4) { err.textContent = 'Bitte den 4-stelligen Code von Handy 1 eingeben.'; return; }
+          notice = ''; joinRoom(c);
+        } })));
+  }
+
+  function liveRows(rows) {
+    return rows.map(function (r) { return el('div', { class: 'row' }, el('span', { class: 'k', text: r[0] }), el('span', { class: 'v', text: r[1] })); });
+  }
+
+  function viewLive() {
+    var v = LV;
+    if (!v) return viewLiveConnect();
+    if (v.phase === 'lobby') return viewLiveLobby(v);
+    if (v.phase === 'over') return viewLiveOver(v);
+    return viewLivePlay(v);
+  }
+
+  function liveLeaveBtn(label) {
+    return el('button', { class: 'btn ghost', text: label || 'Beenden', onclick: leaveAsk });
+  }
+
+  function viewLiveConnect() {
+    return el('div', null, header('Zwei Handys'),
+      el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'label', text: 'Raum' }),
+        el('div', { class: 'codebig', text: net.code }),
+        el('div', { class: 'info', style: 'margin:0', id: 'lmsg', text: net.msg })),
+      liveLeaveBtn('Abbrechen'));
+  }
+
+  function viewLiveLobby(v) {
+    var host = net.role === 'host';
+    var other = v.names[1 - v.me];
+    var connected = net.up && (host ? !!v.names[1] : true);
+    var head = el('div', { class: 'card center', style: 'padding:22px 16px' },
+      el('div', { class: 'label', text: host ? 'Raumcode für Handy 2' : 'Raum' }),
+      el('div', { class: 'codebig', text: net.code }),
+      el('div', { class: 'info', style: 'margin:0', id: 'lmsg', text: connected ? other + ' ist verbunden.' + (net.route ? ' (' + net.route + ')' : '') : net.msg }));
+    var parts = [header('Zwei Handys'), notice ? el('div', { class: 'notice', text: notice }) : null, head];
+    if (connected) {
+      parts.push(el('div', { class: 'card' }, el('div', { class: 'label', text: 'Spiel' }), liveRows(v.set)));
+      if (host) parts.push(el('button', { class: 'btn primary', text: 'Spiel starten', onclick: function () {
+        notice = '';
+        if (!lStartGame()) { notice = 'Mit dieser Auswahl gibt es keine Fragen.'; render(); }
+      } }));
+      else parts.push(el('div', { class: 'info center', text: 'Warte auf ' + v.names[0] + ' …' }));
+    }
+    parts.push(liveLeaveBtn(host ? 'Raum schließen' : 'Verlassen'));
+    return el('div', null, parts);
+  }
+
+  function liveScoreBar(v) {
+    function box(i) {
+      return el('div', { class: 'pbox' + (v.me === i ? ' active' : '') },
+        el('div', { class: 'pname', text: v.names[i] + (v.me === i ? ' (du)' : '') }),
+        el('div', { class: 'pscore', text: String(v.scores[i]) }));
+    }
+    return el('div', null,
+      el('div', { class: 'topbar' }, el('div', { class: 'logo', text: 'Quiz-Abend' }),
+        el('button', { class: 'linkbtn', text: 'Beenden', onclick: leaveAsk })),
+      el('div', { class: 'scorebar' }, box(0), box(1)),
+      el('div', { class: 'progress', text: v.prog || '' }));
+  }
+
+  function liveLinkNote(v) {
+    if (net.up) return null;
+    return el('div', { class: 'notice', text: net.role === 'host'
+      ? (v.names[1] || 'Handy 2') + ' ist nicht verbunden. Das Spiel wartet.'
+      : 'Verbindung unterbrochen. Verbinde neu …' });
+  }
+
+  function statusText(v) {
+    if (v.phase !== 'ask') return '';
+    var opp = v.names[1 - v.me], answered = !!(v.my || lui.sent);
+    if (answered) return v.oppDone ? '' : 'Antwort abgegeben. Warte auf ' + opp + ' …';
+    return v.oppDone ? opp + ' hat schon geantwortet.' : '';
+  }
+
+  function liveAnswers(v, fb) {
+    var q = v.q, me = v.me, opp = 1 - me, answered = !!(v.my || lui.sent), act = canAct(v);
+    var pick = v.my ? v.my.v : lui.pick;
+    function tags(d) {
+      if (!fb) return null;
+      var t = [];
+      [me, opp].forEach(function (i) { if (v.fb.choice[i] === d) t.push(i === me ? 'Du' : v.names[i]); });
+      return t.length ? el('span', { class: 'who', text: t.join(' · ') }) : null;
+    }
+    if (q.typ === 'mc') {
+      return el('div', { class: 'answers' }, q.opts.map(function (txt, d) {
+        var cls = 'ans', hid = !fb && v.hidden.indexOf(d) >= 0;
+        if (fb) cls += d === v.fb.right ? ' ok' : (v.fb.choice[me] === d ? ' bad' : ' dim');
+        else if (hid) cls += ' gone';
+        else if (answered) cls += pick === d ? ' picked' : ' dim';
+        return el('button', { class: cls, disabled: fb || hid || !act, onclick: function () { lAnswer(d); } },
+          el('span', { class: 'letter', text: 'ABCD'.charAt(d) }), el('span', { class: 'atext', text: txt }), tags(d));
+      }));
+    }
+    function tf(val, text) {
+      var cls = 'ans tf';
+      if (fb) cls += val === v.fb.right ? ' ok' : (v.fb.choice[me] === val ? ' bad' : ' dim');
+      else if (answered) cls += pick === val ? ' picked' : ' dim';
+      return el('button', { class: cls, disabled: fb || !act, onclick: function () { lAnswer(val); } },
+        el('span', { class: 'atext', text: text }), tags(val));
+    }
+    return el('div', { class: 'answers' }, tf(true, 'Wahr'), tf(false, 'Falsch'));
+  }
+
+  function liveAsk(v) {
+    var q = v.q, act = canAct(v), answered = !!(v.my || lui.sent);
+    var card = el('div', { class: 'card' }, el('div', { class: 'meta', text: q.meta }), timerEl(), el('div', { class: 'qtext', text: q.frage }));
+    var unit = q.einheit ? ' ' + q.einheit : '';
+    if (q.typ === 'est') {
+      if (answered) {
+        var val = v.my ? v.my.v : lui.guess;
+        card.append(el('div', { class: 'info', text: 'Deine Schätzung: ' + (val === null || val === undefined ? 'keine Antwort' : fmt(val) + unit) }));
+      } else {
+        var err = el('div', { class: 'errtext', id: 'lerr', text: '' });
+        var submit = function () {
+          var val = parseGuess(inp.value);
+          if (val === null) { err.textContent = 'Bitte eine Zahl eingeben.'; return; }
+          lGuess(val);
+        };
+        var inp = el('input', { type: 'text', id: 'lguess', class: 'big', inputmode: 'decimal', autocomplete: 'off',
+          placeholder: q.einheit ? 'Zahl in ' + q.einheit : 'Zahl', value: lui.draft || '', disabled: !act,
+          oninput: function () { lui.draft = this.value; err.textContent = ''; },
+          onkeydown: function (e) { if (e.key === 'Enter') submit(); } });
+        card.append(inp, err, el('button', { class: 'btn primary', text: 'Schätzung abgeben', disabled: !act, onclick: submit }));
+      }
+    } else {
+      card.append(liveAnswers(v, false));
+      var J = v.jk;
+      card.append(el('div', { class: 'jokers' },
+        el('button', { class: 'btn small', text: '50:50 (' + J.fifty + ')',
+          disabled: !act || q.typ !== 'mc' || J.fifty < 1 || v.hidden.length > 0, onclick: function () { lSend({ a: 'fifty' }); } }),
+        el('button', { class: 'btn small', text: 'Tauschen (' + J.swap + ')',
+          disabled: !act || !v.canSwap, onclick: function () { lSend({ a: 'swap' }); } })));
+    }
+    card.append(el('div', { class: 'hint', id: 'lstatus', text: statusText(v) }));
+    return card;
+  }
+
+  function liveFeedback(v) {
+    var q = v.q, fb = v.fb, me = v.me, opp = 1 - me, names = v.names;
+    var card = el('div', { class: 'card' }, el('div', { class: 'meta', text: q.meta }), el('div', { class: 'qtext', text: q.frage }));
+    var unit = fb.einheit ? ' ' + fb.einheit : '';
+    if (fb.typ === 'est') {
+      card.append(el('div', { class: 'banner good', text: 'Richtig: ' + fmt(fb.right) + unit }));
+      [me, opp].forEach(function (i) {
+        var r = fb.res[i];
+        var txt = r.g === null ? 'keine Antwort' : fmt(r.g) + unit + ' (' + (r.diff === 0 ? 'genau richtig' : 'Abstand ' + fmt(r.diff)) + ')';
+        card.append(el('div', { class: 'row' }, el('span', { class: 'k', text: i === me ? 'Du' : names[i] }), el('span', { class: 'v', text: txt + ' · +' + r.pts })));
+      });
+    } else {
+      card.append(liveAnswers(v, true));
+      var r = fb.res[me], ro = fb.res[opp];
+      var head = r.timeout ? 'Zeit abgelaufen' : (r.correct ? 'Richtig!' : 'Leider falsch');
+      var sub = r.correct ? '+' + r.pts + ' Punkte' + (r.bonus ? ' (davon ' + r.bonus + ' Zeitbonus)' : '') : '0 Punkte';
+      card.append(el('div', { class: 'banner ' + (r.correct ? 'good' : 'miss') }, head, el('small', { text: sub })));
+      card.append(el('div', { class: 'row' }, el('span', { class: 'k', text: names[opp] }),
+        el('span', { class: 'v', text: (ro.timeout ? 'keine Antwort' : (ro.correct ? 'richtig' : 'falsch')) + ' · +' + ro.pts })));
+    }
+    if (fb.info) card.append(el('div', { class: 'info', style: 'margin-top:12px', text: fb.info }));
+    var btn = v.ready[me]
+      ? el('button', { class: 'btn', text: 'Warte auf ' + names[opp] + ' …', disabled: true })
+      : el('button', { class: 'btn primary', text: 'Weiter', onclick: function () { lSend({ a: 'next' }); } });
+    return el('div', null, card, btn);
+  }
+
+  function viewLivePlay(v) {
+    return el('div', null, liveScoreBar(v), liveLinkNote(v), v.phase === 'ask' ? liveAsk(v) : liveFeedback(v));
+  }
+
+  function viewLiveOver(v) {
+    var a = v.scores[0], b = v.scores[1], win = a > b ? 0 : (b > a ? 1 : -1), F = v.final, me = v.me, opp = 1 - me;
+    function stat(i) {
+      return el('div', { class: 'row' }, el('span', { class: 'k', text: v.names[i] + (i === me ? ' (du)' : '') }),
+        el('span', { class: 'v', text: v.scores[i] + ' Punkte · ' + F.right[i] + ' von ' + F.stdAsked[i] + ' richtig' }));
+    }
+    var rematch = v.ready[me]
+      ? el('button', { class: 'btn', text: 'Warte auf ' + v.names[opp] + ' …', disabled: true })
+      : el('button', { class: 'btn primary', text: 'Revanche', disabled: !net.up, onclick: function () { lSend({ a: 'rematch' }); } });
+    return el('div', null, header('Ergebnis'), liveLinkNote(v),
+      el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: win < 0 ? 'Unentschieden' : 'Sieger' }),
+        el('div', { class: 'big', text: win < 0 ? 'Gleichstand bei ' + a + ' Punkten' : (win === me ? 'Du gewinnst!' : v.names[win] + ' gewinnt!') })),
+      el('div', { class: 'card' }, el('div', { class: 'label', text: 'Endstand' }), stat(0), stat(1),
+        (F.estWins[0] || F.estWins[1]) ? el('div', { class: 'hint', text: 'Schätzfragen näher dran: ' + v.names[0] + ' ' + F.estWins[0] + ', ' + v.names[1] + ' ' + F.estWins[1] }) : null),
+      rematch,
+      el('button', { class: 'btn ghost', text: 'Zum Start', onclick: function () { leaveLive(true, ''); } }));
+  }
+
+  // ── Zeichnen mit Teil-Aktualisierung (Eingabefeld und Tastatur bleiben erhalten) ──
+  function liveKey() {
+    var v = LV;
+    if (!v) return 'conn|' + net.msg + '|' + (net.up ? 1 : 0);
+    return [v.phase, v.qk, v.my ? 1 : 0, lui.sent ? 1 : 0, v.paused ? 1 : 0, net.up ? 1 : 0, v.hidden.join(''), v.jk.fifty, v.jk.swap,
+      v.canSwap ? 1 : 0, v.ready.join(''), v.scores.join(','), v.names.join('/'), net.msg, net.route, notice].join('|');
+  }
+
+  function renderLive() {
+    if (view !== 'live') return;
+    var key = liveKey();
+    if (app.getAttribute('data-lkey') === key) {
+      var st = document.getElementById('lstatus');
+      if (st && LV) st.textContent = statusText(LV);
+      return;
+    }
+    app.replaceChildren(viewLive());
+    app.setAttribute('data-lkey', key);
+    lPaintTimer();
   }
 
   // ── Start ──────────────────────────────────────────────────────────────────
