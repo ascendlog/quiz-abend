@@ -12,8 +12,8 @@ Quizspiel für zwei – gedacht für einen Spieleabend zu zweit, läuft als Web-
 ## Spielregeln
 
 - Fragetypen: Multiple Choice, Wahr/Falsch, Schätzfragen
-- 10 Punkte pro richtige Antwort, bis zu 5 Zeitbonus-Punkte (20 s bei Auswahlfragen)
-- Schätzfragen: Wer näher dran liegt, bekommt 10 Punkte, ein exakter Treffer gibt +5 (30 s)
+- 10 Punkte pro richtige Antwort, bis zu 5 Zeitbonus-Punkte (30 s pro Frage)
+- Schätzfragen: Wer näher dran liegt, bekommt 10 Punkte, ein exakter Treffer gibt +5
 - Joker pro Person: 1× 50:50, 1× Frage tauschen
 - Spielende wählbar: feste Anzahl Fragen oder Zielpunkte
 
