@@ -188,6 +188,12 @@
   }
   textarea:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(26,25,22,0.07); }
   .banner.neutral { background: var(--accent-soft); color: #633806; }
+  .todo { background: var(--accent-soft); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+  .todo .stepno { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+  .todo .stepttl { font-size: 19px; font-weight: 600; line-height: 1.3; }
+  .todo .stepsub { font-size: 14px; color: #633806; margin-top: 6px; line-height: 1.5; }
+  .todo.wait { background: var(--paper-warm); }
+  .todo.wait .stepno, .todo.wait .stepsub { color: var(--ink-soft); }
   .qa { padding: 10px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; }
   .qa:last-child { border-bottom: none; }
   .qa .qf { color: var(--ink-faint); font-size: 12px; margin-bottom: 3px; }
@@ -1111,6 +1117,10 @@
     net.hb = setInterval(function () {
       if (!net.conn || !net.conn.open || !net.up) return;
       netSend({ t: 'ping', n: Date.now() });
+      if (net.role === 'host' && L && L.kind === 'paar' && L.phase !== 'lobby') {
+        net.tickN = (net.tickN || 0) + 1;
+        if (net.tickN % 2 === 0) netSend({ t: 'v', v: lBuild(1) });
+      }
       if (Date.now() - net.lastRx > 7000) linkDown('silence');
     }, 2000);
   }
@@ -1573,8 +1583,11 @@
   // Wird auf beiden Handys aufgerufen, sobald ein neues Ansichtsmodell vorliegt.
   function localApply(v) {
     LV = v;
-    if (v.qk !== lui.qk) { lui.qk = v.qk; lui.sent = false; lui.pick = null; lui.draft = ''; lui.guess = null; }
+    if (v.qk !== lui.qk) { lui.qk = v.qk; lui.sent = false; lui.pick = null; lui.draft = ''; lui.guess = null; lui.lastAct = null; }
     if (lui.awaitSync) { lui.awaitSync = false; lui.sent = !!v.my; }
+    if (v.kind === 'paar' && net.role === 'guest' && net.up && lui.sent && !v.my && lui.lastAct && (v.phase === 'pself' || v.phase === 'pguess') && Date.now() - lui.lastAct.at > 2500) {
+      lui.lastAct.at = Date.now(); netSend(lui.lastAct.m);
+    }
     if (v.phase === 'over' && v.kind !== 'paar') recordResult(v.gid, v.names, v.scores);
     lStartTimer(v);
     renderLive();
@@ -2120,16 +2133,35 @@
     return el('div', null, pScoreBar(v), liveLinkNote(v), v.phase === 'preveal' ? pReveal(v) : pInput(v));
   }
 
+  function todoBox(no, title, sub, wait) {
+    return el('div', { class: 'todo' + (wait ? ' wait' : '') },
+      el('div', { class: 'stepno', text: no }),
+      el('div', { class: 'stepttl', text: title }),
+      sub ? el('div', { class: 'stepsub', text: sub }) : null);
+  }
+
   function pSubmit(kind, val) {
-    if (lSend({ a: kind, v: val })) { lui.sent = true; lui.val = val; renderLive(); }
+    var m = { a: kind, v: val };
+    if (lSend(m)) { lui.sent = true; lui.val = val; lui.lastAct = { m: m, at: Date.now() }; renderLive(); }
   }
 
   function pInput(v) {
-    var q = v.q, opp = 1 - v.me, oppName = v.names[opp], guessing = v.phase === 'pguess';
-    var done = !!(v.my || lui.sent), can = pCan(), kind = guessing ? 'pguess' : 'pself';
+    var q = v.q, opp = 1 - v.me, oppName = v.names[opp], guessing = v.phase === 'pguess', kennt = v.pm === 'kennt';
+    var done = !!(v.my || lui.sent), can = pCan(), kind = guessing ? 'pguess' : 'pself', box;
+    if (!guessing) {
+      box = done
+        ? todoBox(kennt ? 'Schritt 1 von 2 · erledigt' : 'Erledigt', 'Deine Antwort ist gespeichert', '', true)
+        : todoBox(kennt ? 'Schritt 1 von 2 · Du bist dran' : 'Du bist dran', 'Antworte für dich selbst',
+            kennt ? oppName + ' sieht deine Antwort noch nicht. Danach rätst du, was ' + oppName + ' geschrieben hat – und ' + oppName + ' rät, was du geschrieben hast.'
+                  : oppName + ' antwortet gleichzeitig für sich. Danach vergleicht ihr eure Antworten.');
+    } else {
+      box = done
+        ? todoBox('Schritt 2 von 2 · erledigt', 'Dein Tipp ist gespeichert', '', true)
+        : todoBox('Schritt 2 von 2 · Du bist dran', 'Rate: Was hat ' + oppName + ' geantwortet?', 'Tippe, was ' + oppName + ' bei dieser Frage für sich geschrieben hat.');
+    }
     var card = el('div', { class: 'card' },
       el('div', { class: 'meta', text: q.meta }),
-      el('div', { class: 'label', text: guessing ? 'Rate: Was antwortet ' + oppName + '?' : (v.pm === 'kennt' ? 'Nur für dich – ' + oppName + ' rät gleich' : 'Nur für dich') }),
+      guessing ? el('div', { class: 'label', text: 'Die Frage war' }) : null,
       el('div', { class: 'qtext', text: q.frage }));
     if (done) {
       var val = v.my ? v.my.v : lui.val;
@@ -2142,7 +2174,7 @@
       card.append(el('button', { class: 'btn primary', style: 'margin-top:14px', text: guessing ? 'Tipp abgeben' : 'Antwort abgeben',
         disabled: !can || lui.pick === null || lui.pick === undefined, onclick: function () { pSubmit(kind, lui.pick); } }));
     } else {
-      var ta = el('textarea', { id: 'lguess', rows: '3', maxlength: '160', placeholder: guessing ? 'Dein Tipp …' : 'Deine Antwort …', disabled: !can,
+      var ta = el('textarea', { id: 'lguess', rows: '3', maxlength: '160', placeholder: guessing ? 'Dein Tipp für ' + oppName + ' …' : 'Deine Antwort …', disabled: !can,
         oninput: function () { lui.draft = this.value; btn.disabled = !this.value.trim() || !can; } });
       ta.value = lui.draft || '';
       var btn = el('button', { class: 'btn primary', text: guessing ? 'Tipp abgeben' : 'Antwort abgeben', disabled: !can || !(lui.draft || '').trim(),
@@ -2150,7 +2182,7 @@
       card.append(ta, btn);
     }
     card.append(el('div', { class: 'hint', id: 'lstatus', text: pStatusText(v) }));
-    return el('div', null, card,
+    return el('div', null, box, card,
       el('button', { class: 'btn ghost', text: 'Frage überspringen', disabled: !can, onclick: function () { lSend({ a: 'pskip' }); } }));
   }
 
@@ -2167,6 +2199,14 @@
     var jme = rv.jd[me], jop = rv.jd[opp], both = jme !== null && jop !== null;
     var auto = !!q.opts;
     var card = el('div', { class: 'card' }, el('div', { class: 'meta', text: q.meta }), el('div', { class: 'qtext', text: q.frage }));
+    var box = null;
+    if (!both) {
+      if (jme === null) box = kennt
+        ? todoBox('Schritt 3 von 3 · Du bist dran', 'Bewerte den Tipp von ' + names[opp], names[opp] + ' hat geraten, was du geantwortet hast. Tippe unten bei „Wie nah lag ' + names[opp] + '?“ auf einen Knopf.')
+        : todoBox('Du bist dran', 'Sind eure Antworten ähnlich?', 'Tippe unten auf „Gleich“ oder „Unterschiedlich“.');
+      else box = todoBox(kennt ? 'Schritt 3 von 3 · erledigt' : 'Erledigt', 'Deine Bewertung ist gespeichert',
+        names[opp] + ' bewertet gerade ' + (kennt ? 'deinen Tipp.' : 'eure Antworten.') + ' Gleich geht es weiter.', true);
+    }
     function row(k, t) { return el('div', { class: 'row' }, el('span', { class: 'k', text: k }), el('span', { class: 'v', text: t })); }
 
     if (kennt) {
@@ -2174,13 +2214,13 @@
       if (jme === null) card.append(judgeButtons(['T', 'F', 'D'], 'Wie nah lag ' + names[opp] + '?'));
       else card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Deine Bewertung: ' + JD_LABEL[jme] }));
       card.append(el('div', { class: 'label', style: 'margin-top:18px', text: 'Über ' + names[opp] }), row(names[opp] + ' hat geantwortet', rv.oppSelf), row('Du hast geraten', rv.myGuess));
-      if (jop === null) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Warte auf die Bewertung von ' + names[opp] + ' …' }));
+      if (jop === null) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: names[opp] + ' bewertet deinen Tipp noch …' }));
       else card.append(el('div', { class: 'banner ' + (jop === 'T' ? 'good' : (jop === 'F' ? 'neutral' : 'miss')) },
         jop === 'T' ? 'Treffer!' : (jop === 'F' ? 'Fast!' : 'Diesmal daneben'), el('small', { text: '+' + PJ_PTS[jop] + ' Punkte' })));
     } else {
       card.append(row('Du', rv.mySelf), row(names[opp], rv.oppSelf));
       if (jme === null) card.append(judgeButtons(['G', 'V'], 'Sind eure Antworten ähnlich?'));
-      else if (!both) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Warte auf ' + names[opp] + ' …' }));
+      else if (!both) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: names[opp] + ' hat noch nicht gewählt …' }));
       else {
         var same = jme === 'G' && jop === 'G';
         card.append(el('div', { class: 'banner ' + (same ? 'good' : 'neutral') }, same ? 'Gleich!' : 'Unterschiedlich', el('small', { text: same ? 'Da seid ihr euch einig.' : 'Spannend – darüber könnt ihr kurz reden.' })));
@@ -2190,7 +2230,7 @@
     if (both) btn = v.ready[me]
       ? el('button', { class: 'btn', text: 'Warte auf ' + names[opp] + ' …', disabled: true })
       : el('button', { class: 'btn primary', text: 'Weiter', onclick: function () { lSend({ a: 'pnext' }); } });
-    return el('div', null, card, btn);
+    return el('div', null, box, card, btn);
   }
 
   function viewPaarOver(v) {
