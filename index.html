@@ -1026,6 +1026,14 @@
   var L = null;      // Spielstand (nur auf Handy 1)
   var LV = null;     // Ansichtsmodell für dieses Handy
   var lui = {};      // lokaler Zustand der Live-Ansicht
+  var dbgLog = [];   // Ereignisprotokoll fuer die Diagnose (letzte 80 Eintraege)
+  function dbg(s) {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    dbgLog.push(p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + ' ' + s);
+    if (dbgLog.length > 80) dbgLog.shift();
+  }
+  window.addEventListener('error', function (e) { dbg('JS-Fehler: ' + (e.message || '?') + ' (Zeile ' + (e.lineno || '?') + ')'); });
+  window.addEventListener('unhandledrejection', function (e) { dbg('Promise-Fehler: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
   var lwatch = null, ltimer = null, wakeLock = null, lkind = 'wissen';
 
   function myName() { return String(S.myName || '').trim().slice(0, 16); }
@@ -1076,7 +1084,7 @@
     net.conn = c; net.connStart = Date.now();
     c.on('open', function () {
       if (net.conn !== c) return;
-      c._was = true;
+      c._was = true; dbg('Verbindung offen (' + net.role + ')');
       net.lastRx = Date.now(); net.rcTries = 0; net.up = true; net.everUp = true;
       startHb(); requestWake();
       setTimeout(detectRoute, 1500);
@@ -1089,17 +1097,20 @@
     c.on('data', function (d) { if (net.conn === c) onNetData(d); });
     c.on('close', function () {
       if (net.conn !== c) return;
+      dbg('Verbindung geschlossen');
       if (net.up) linkDown('close');
       else if (net.role === 'guest') scheduleReconnect(1500);
     });
-    c.on('error', function () {
+    c.on('error', function (err) {
       if (net.conn !== c) return;
+      dbg('Verbindungsfehler: ' + (err && (err.type || err.message) || '?'));
       if (!net.up && net.role === 'guest') scheduleReconnect(2000);
     });
   }
 
   function linkDown(reason, msg) {
     if (!net.up) return;
+    dbg('Verbindung weg: ' + reason);
     net.up = false; stopHb(); lStopTimer();
     var c = net.conn; if (c) { try { c.close(); } catch (e) {} }
     if (net.role === 'host') {
@@ -1155,8 +1166,18 @@
     switch (d.t) {
       case 'ping': netSend({ t: 'pong', n: d.n }); break;
       case 'hi': if (net.role === 'host') onGuestHi(d); break;
-      case 'act': if (net.role === 'host') lAct(1, d); break;
-      case 'v': if (net.role === 'guest' && d.v) localApply(d.v); break;
+      case 'act':
+        if (net.role === 'host') {
+          dbg('Antwort empfangen: ' + d.a);
+          try { lAct(1, d); } catch (e) { dbg('FEHLER bei ' + d.a + ': ' + e.message); }
+        }
+        break;
+      case 'v':
+        if (net.role === 'guest' && d.v) {
+          dbg('Ansicht: ' + d.v.phase + ' ' + (d.v.qk || '') + ' my=' + (d.v.my ? 1 : 0) + ' opp=' + (d.v.oppDone ? 1 : 0));
+          try { localApply(d.v); } catch (e) { dbg('FEHLER bei Ansicht: ' + e.message); }
+        }
+        break;
       case 'busy':
         if (net.role === 'guest') { netMsg('Der Raum ist gerade belegt. Ich versuche es gleich noch einmal …'); scheduleReconnect(3000); }
         break;
@@ -1522,7 +1543,7 @@
 
   function lPush() {
     persistLive();
-    localApply(lBuild(0));
+    try { localApply(lBuild(0)); } catch (e) { dbg('FEHLER bei eigener Ansicht: ' + e.message); }
     if (net.up) netSend({ t: 'v', v: lBuild(1) });
   }
 
@@ -1631,19 +1652,25 @@
   function lSend(m) {
     m.t = 'act';
     if (net.role === 'host') { lAct(0, m); return true; }
-    return netSend(m);
+    var ok = netSend(m);
+    dbg('Gesendet: ' + m.a + (ok ? '' : ' (FEHLGESCHLAGEN)'));
+    return ok;
   }
   function canAct(v) { return v.phase === 'ask' && !v.paused && !(v.my || lui.sent) && (net.role === 'host' || net.up); }
   function lAnswer(i) {
     var v = LV; if (!v || !canAct(v)) return;
     var left = Math.max(0, Math.round(lui.endsAt - Date.now()));
-    if (lSend({ a: 'answer', i: i, left: left })) { lui.sent = true; lui.pick = i; renderLive(); }
+    lui.sent = true; lui.pick = i;
+    if (!lSend({ a: 'answer', i: i, left: left })) { lui.sent = false; lui.pick = null; }
+    renderLive();
   }
   function lGuess(val) {
     var v = LV; if (!v || !canAct(v)) return;
     var left = Math.max(0, Math.round(lui.endsAt - Date.now()));
     lui.guess = val;
-    if (lSend({ a: 'guess', v: val, left: left })) { lui.sent = true; renderLive(); }
+    lui.sent = true;
+    if (!lSend({ a: 'guess', v: val, left: left })) lui.sent = false;
+    renderLive();
   }
   function leaveAsk() {
     var inGame = LV && ['ask', 'feedback', 'pself', 'pguess', 'preveal'].indexOf(LV.phase) >= 0;
@@ -1890,7 +1917,16 @@
       if (st && LV) st.textContent = statusText(LV);
       return;
     }
-    app.replaceChildren(viewLive());
+    var node;
+    try { node = viewLive(); }
+    catch (e) {
+      dbg('ANZEIGEFEHLER: ' + e.message + ' | ' + String(e.stack || '').split('\n')[0]);
+      node = el('div', null, header('Fehler'), el('div', { class: 'notice', text: 'Die Anzeige hat einen Fehler: ' + e.message }),
+        el('button', { class: 'btn primary', text: 'Neu synchronisieren', onclick: resync }),
+        el('button', { class: 'linkbtn', text: 'Diagnose', onclick: showDiag }),
+        liveLeaveBtn('Beenden'));
+    }
+    app.replaceChildren(node);
     app.setAttribute('data-lkey', key);
     lPaintTimer();
   }
@@ -2031,6 +2067,12 @@
   }
 
   function pAct(p, m) {
+    var before = L.phase;
+    pActInner(p, m);
+    dbg('Spieler ' + (p + 1) + ': ' + m.a + ' (' + before + ' → ' + L.phase + ')');
+  }
+
+  function pActInner(p, m) {
     var a = m.a, q = L.it && L.it.q, st = L.settings;
     if (a === 'pself') {
       if (L.phase !== 'pself' || L.self[p] !== null) return;
@@ -2105,6 +2147,34 @@
     return v.oppDone ? opp + ' ist schon fertig.' : '';
   }
 
+  // ── Diagnose und Neu-Synchronisieren ───────────────────────────────────────
+  function resync() {
+    dbg('Neu synchronisieren (' + net.role + ')');
+    if (net.role === 'host') { if (L) lPush(); }
+    else if (net.up) { lui.awaitSync = true; netSend({ t: 'hi', name: myName() }); }
+    else if (net.peer) checkAlive();
+    lui.sent = false;
+    app.removeAttribute('data-lkey');
+    renderLive();
+  }
+
+  function showDiag() {
+    var old = document.getElementById('diag'); if (old) old.remove();
+    var v = LV;
+    var head = [
+      'Rolle: ' + (net.role || '-') + ' · Verbindung: ' + (net.up ? 'ja' : 'nein') + (net.route ? ' · ' + net.route : ''),
+      'Ansicht: ' + (v ? v.phase + ' ' + (v.qk || '') : '-') + (v ? ' · my=' + (v.my ? 1 : 0) + ' opp=' + (v.oppDone ? 1 : 0) : ''),
+      'Lokal: gesendet=' + (lui.sent ? 1 : 0) + (lui.lastAct ? ' (' + lui.lastAct.m.a + ')' : ''),
+      L ? 'Host-Stand: ' + L.phase + ' self=' + JSON.stringify(L.self || null) + ' guess=' + JSON.stringify(L.guess || null) + ' jd=' + JSON.stringify(L.jd || null) : ''
+    ].filter(Boolean).join('\n');
+    var box = el('div', { id: 'diag', style: 'position:fixed;inset:0;z-index:50;background:var(--paper);overflow:auto;padding:18px 16px 40px' },
+      el('div', { class: 'label', text: 'Diagnose' }),
+      el('pre', { style: 'font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin:0 0 14px', text: head + '\n\n' + dbgLog.slice().reverse().join('\n') }),
+      el('button', { class: 'btn primary', text: 'Neu synchronisieren', onclick: function () { resync(); box.remove(); } }),
+      el('button', { class: 'btn ghost', text: 'Schließen', onclick: function () { box.remove(); } }));
+    document.body.appendChild(box);
+  }
+
   // ── Ansichten ──────────────────────────────────────────────────────────────
   function pCan() { return net.role === 'host' || net.up; }
 
@@ -2130,7 +2200,8 @@
 
   function viewPaar(v) {
     if (v.phase === 'over') return viewPaarOver(v);
-    return el('div', null, pScoreBar(v), liveLinkNote(v), v.phase === 'preveal' ? pReveal(v) : pInput(v));
+    return el('div', null, pScoreBar(v), liveLinkNote(v), v.phase === 'preveal' ? pReveal(v) : pInput(v),
+      el('div', { class: 'center', style: 'margin-top:18px' }, el('button', { class: 'linkbtn', text: 'Hängt es? Diagnose', onclick: showDiag })));
   }
 
   function todoBox(no, title, sub, wait) {
@@ -2141,8 +2212,12 @@
   }
 
   function pSubmit(kind, val) {
+    // Lokalen Zustand VOR dem Senden setzen: Auf Handy 1 wertet lSend die Antwort sofort aus und wechselt
+    // dabei evtl. schon in die naechste Phase (dann setzt localApply den Zustand zurueck).
     var m = { a: kind, v: val };
-    if (lSend(m)) { lui.sent = true; lui.val = val; lui.lastAct = { m: m, at: Date.now() }; renderLive(); }
+    lui.sent = true; lui.val = val; lui.lastAct = { m: m, at: Date.now() };
+    if (!lSend(m)) { lui.sent = false; lui.lastAct = null; }
+    renderLive();
   }
 
   function pInput(v) {
