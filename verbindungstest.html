@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Quiz-Abend">
+<title>Quiz-Abend · Verbindungstest</title>
+<style>
+  :root {
+    --ink: #1A1916;
+    --ink-soft: #5F5E5A;
+    --ink-faint: #888780;
+    --paper: #F7F5F0;
+    --paper-warm: #EFECEA;
+    --border: #D4D3CE;
+    --border-soft: #E8E6DF;
+    --white: #FFFFFF;
+    --accent: #854F0B;
+    --accent-soft: #FAEEDA;
+    --green: #3B6D11;
+    --green-soft: #EAF3DE;
+    --red: #A32D2D;
+    --red-soft: #FCEBEB;
+    --radius: 10px;
+    --radius-sm: 7px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: calc(20px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  }
+  .logo { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+  .sub { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 22px; }
+  .lead { font-size: 15px; color: var(--ink-soft); line-height: 1.65; margin-bottom: 18px; }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 8px;
+  }
+  .step { font-size: 14px; color: var(--ink-soft); margin-bottom: 6px; }
+  .step:last-child { margin-bottom: 0; }
+  .step b { color: var(--ink); font-weight: 600; }
+
+  .btn {
+    display: block; width: 100%;
+    min-height: 52px;
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    color: var(--ink);
+    font-family: inherit; font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 10px;
+    -webkit-appearance: none; appearance: none;
+  }
+  .btn:active { opacity: 0.7; }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .btn.ghost { background: transparent; color: var(--ink-soft); font-weight: 500; }
+  .btn[disabled] { opacity: 0.4; }
+  .btnrow { display: flex; gap: 10px; }
+  .btnrow .btn { flex: 1; }
+
+  .or { text-align: center; font-size: 12px; color: var(--ink-faint); letter-spacing: 0.08em; margin: 6px 0 12px; }
+  .fieldlabel { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  input[type="text"] {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    font-family: inherit; font-size: 22px; letter-spacing: 0.3em; text-align: center;
+    color: var(--ink);
+    outline: none;
+    margin-bottom: 10px;
+    -webkit-appearance: none; appearance: none;
+  }
+  input[type="text"]:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(26,25,22,0.07); }
+  input::placeholder { color: var(--border); }
+  .err { font-size: 13px; color: var(--red); min-height: 18px; margin-top: 2px; }
+
+  .codebox { text-align: center; padding: 18px 16px; }
+  .codelabel { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .code { font-size: 44px; font-weight: 300; letter-spacing: 0.22em; padding-left: 0.22em; font-variant-numeric: tabular-nums; }
+  .roomhint { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-soft); }
+  .row:last-child { border-bottom: none; }
+  .row .k { flex: 0 0 112px; font-size: 12px; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .row .v { flex: 1; font-size: 14px; font-weight: 500; text-align: right; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .dot.ok { background: var(--green); }
+  .dot.warn { background: var(--accent); }
+  .dot.bad { background: var(--red); }
+
+  .chat { max-height: 160px; overflow-y: auto; font-size: 14px; }
+  .chat div { padding: 4px 0; border-bottom: 1px solid var(--border-soft); }
+  .chat div:last-child { border-bottom: none; }
+  .chat .me { color: var(--ink-soft); }
+  .chat .empty { color: var(--ink-faint); font-style: italic; }
+
+  .test { background: var(--accent-soft); border-color: transparent; }
+  .test .label { color: var(--accent); }
+  .test p { font-size: 13px; color: #633806; line-height: 1.6; }
+
+  details { margin-bottom: 14px; }
+  summary { font-size: 13px; color: var(--ink-soft); padding: 8px 0; cursor: pointer; }
+  pre {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 11px; line-height: 1.5;
+    background: var(--white); border: 1px solid var(--border-soft); border-radius: var(--radius-sm);
+    padding: 10px 12px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+    -webkit-user-select: text; user-select: text;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">Quiz-Abend</div>
+  <div class="sub">Verbindungstest</div>
+
+  <section id="vStart">
+    <p class="lead">Dieser Test prüft, ob sich zwei iPhones im Heim-WLAN zuverlässig verbinden. Beide Handys öffnen diese Seite.</p>
+    <div class="card">
+      <div class="step"><b>Handy 1</b> tippt auf „Raum erstellen“ und liest den Code vor.</div>
+      <div class="step"><b>Handy 2</b> gibt den Code ein und tippt auf „Beitreten“.</div>
+    </div>
+    <button class="btn primary" id="btnHost">Raum erstellen (Handy 1)</button>
+    <div class="or">oder</div>
+    <label class="fieldlabel" for="joinCode">Code von Handy 1</label>
+    <input type="text" id="joinCode" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" autocomplete="off">
+    <button class="btn" id="btnJoin">Beitreten (Handy 2)</button>
+    <div class="err" id="startErr"></div>
+  </section>
+
+  <section id="vRoom" hidden>
+    <div class="card codebox">
+      <div class="codelabel" id="codeLabel">Raumcode</div>
+      <div class="code" id="codeBig">----</div>
+      <div class="roomhint" id="roomHint"></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Status</div>
+      <div class="row"><span class="dot" id="dSignal"></span><span class="k">Vermittlung</span><span class="v" id="vSignal">–</span></div>
+      <div class="row"><span class="dot" id="dLink"></span><span class="k">Verbindung</span><span class="v" id="vLink">–</span></div>
+      <div class="row"><span class="dot" id="dRoute"></span><span class="k">Weg</span><span class="v" id="vRoute">–</span></div>
+      <div class="row"><span class="dot" id="dRtt"></span><span class="k">Antwortzeit</span><span class="v" id="vRtt">–</span></div>
+      <div class="row"><span class="dot" id="dRe"></span><span class="k">Wiederverbunden</span><span class="v" id="vRe">0×</span></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="btn primary" id="btnHello">Hallo senden</button>
+      <button class="btn" id="btnPing">Ping</button>
+    </div>
+
+    <div class="card">
+      <div class="label">Nachrichten</div>
+      <div class="chat" id="chat"><div class="empty">Noch nichts empfangen.</div></div>
+    </div>
+
+    <div class="card test">
+      <div class="label">Sperrbildschirm-Test</div>
+      <p>Sobald die Verbindung steht: Sperre bei einem Handy den Bildschirm für etwa 30 Sekunden, entsperre es wieder und schau, ob oben „verbunden“ zurückkommt und der Zähler „Wiederverbunden“ hochgeht.</p>
+    </div>
+
+    <button class="btn" id="btnReconnect">Neu verbinden</button>
+    <details>
+      <summary>Protokoll anzeigen</summary>
+      <pre id="logBox"></pre>
+    </details>
+    <button class="btn" id="btnCopy">Protokoll kopieren</button>
+    <button class="btn ghost" id="btnLeave">Beenden</button>
+  </section>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ── Zustand ────────────────────────────────────────────────────────────────
+  var APP_PREFIX = 'qa-ascend-';
+  var PEER_OPTS = { debug: 1 };
+
+  var peer = null;
+  var conn = null;
+  var role = null;          // 'host' | 'guest'
+  var code = '';
+  var left = false;
+  var everConnected = false;
+  var reconnects = 0;
+  var lastPong = 0;
+  var connStart = 0;
+  var hbTimer = null;
+  var rcTimer = null;
+  var rcTries = 0;
+  var wakeLock = null;
+  var rtts = [];
+  var logLines = [];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ── Hilfsfunktionen ────────────────────────────────────────────────────────
+  function now() { return new Date().toLocaleTimeString('de-DE'); }
+
+  function log(msg) {
+    logLines.push(now() + '  ' + msg);
+    if (logLines.length > 400) logLines.shift();
+    var box = $('logBox');
+    if (box) { box.textContent = logLines.join('\n'); box.scrollTop = box.scrollHeight; }
+  }
+
+  function setRow(name, text, level) {
+    $('v' + name).textContent = text;
+    $('d' + name).className = 'dot' + (level ? ' ' + level : '');
+  }
+  function setSignal(t, l) { setRow('Signal', t, l); }
+  function setLink(t, l) { setRow('Link', t, l); }
+
+  function randomCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+
+  function show(view) {
+    $('vStart').hidden = view !== 'start';
+    $('vRoom').hidden = view !== 'room';
+  }
+
+  function addChat(text, mine) {
+    var box = $('chat');
+    var empty = box.querySelector('.empty');
+    if (empty) empty.remove();
+    var d = document.createElement('div');
+    if (mine) d.className = 'me';
+    d.textContent = text;
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function send(obj) {
+    if (conn && conn.open) {
+      try { conn.send(obj); return true; } catch (e) { log('Senden fehlgeschlagen: ' + e.message); }
+    }
+    return false;
+  }
+
+  function errorText(err) {
+    var t = err && err.type;
+    if (t === 'peer-unavailable') return 'Raum nicht gefunden. Code prüfen, Handy 1 muss den Raum zuerst erstellen.';
+    if (t === 'network' || t === 'socket-error' || t === 'socket-closed') return 'Keine Verbindung zum Vermittlungsserver. Internet am Router prüfen.';
+    if (t === 'server-error') return 'Der Vermittlungsserver antwortet nicht.';
+    if (t === 'browser-incompatible') return 'Dieser Browser unterstützt die Verbindung nicht.';
+    if (t === 'webrtc') return 'Direkte Verbindung fehlgeschlagen.';
+    return 'Fehler: ' + (t || (err && err.message) || 'unbekannt');
+  }
+
+  // ── Verbindung zwischen den Handys ─────────────────────────────────────────
+  function attachConn(c) {
+    if (conn && conn !== c) { try { conn.close(); } catch (e) {} }
+    conn = c;
+    connStart = Date.now();
+    setLink('verbinde …', 'warn');
+
+    c.on('open', function () {
+      if (conn !== c) return;
+      c._wasOpen = true;
+      lastPong = Date.now();
+      rcTries = 0;
+      if (everConnected) { reconnects++; $('vRe').textContent = reconnects + '×'; $('dRe').className = 'dot ok'; }
+      everConnected = true;
+      setLink('verbunden', 'ok');
+      $('roomHint').textContent = role === 'host' ? 'Handy 2 ist verbunden.' : 'Mit Handy 1 verbunden.';
+      log('Datenverbindung offen' + (reconnects ? ' (Wiederverbindung Nr. ' + reconnects + ')' : ''));
+      startHeartbeat();
+      send({ type: 'hello', text: 'Hallo von ' + (role === 'host' ? 'Handy 1' : 'Handy 2') + ' (' + now() + ')' });
+      setTimeout(detectRoute, 1500);
+      requestWake();
+    });
+
+    c.on('data', function (d) { if (conn === c) onData(d); });
+
+    c.on('close', function () {
+      if (conn !== c) return;
+      log('Verbindung geschlossen');
+      stopHeartbeat();
+      setLink(role === 'host' ? 'wartet auf Handy 2' : 'getrennt', 'bad');
+      if (role === 'guest') scheduleReconnect(1500);
+    });
+
+    c.on('error', function (e) {
+      if (conn !== c) return;
+      log('Verbindungsfehler: ' + (e && e.type ? e.type : e));
+    });
+
+    c.on('iceStateChanged', function (s) { log('ICE-Status: ' + s); });
+  }
+
+  function onData(d) {
+    if (!d || typeof d !== 'object') return;
+    lastPong = Date.now();
+    if (d.type === 'ping') {
+      send({ type: 'pong', t: d.t });
+    } else if (d.type === 'pong') {
+      var rtt = Date.now() - d.t;
+      if (rtt >= 0 && rtt < 60000) {
+        rtts.push(rtt); if (rtts.length > 10) rtts.shift();
+        var avg = Math.round(rtts.reduce(function (a, b) { return a + b; }, 0) / rtts.length);
+        setRow('Rtt', rtt + ' ms (Ø ' + avg + ' ms)', rtt < 150 ? 'ok' : 'warn');
+      }
+      if ($('vLink').textContent === 'keine Antwort') { setLink('verbunden', 'ok'); log('Antwort wieder da'); }
+    } else if (d.type === 'hello') {
+      addChat('Gegenseite: ' + String(d.text).slice(0, 200), false);
+    } else if (d.type === 'busy') {
+      log('Raum ist schon belegt');
+      $('roomHint').textContent = 'Der Raum ist schon belegt.';
+    }
+  }
+
+  function startHeartbeat() {
+    stopHeartbeat();
+    hbTimer = setInterval(function () {
+      if (conn && conn.open) {
+        send({ type: 'ping', t: Date.now() });
+        if (Date.now() - lastPong > 8000 && $('vLink').textContent === 'verbunden') {
+          setLink('keine Antwort', 'warn');
+          log('Keine Antwort seit 8 Sekunden');
+        }
+      }
+    }, 2000);
+  }
+  function stopHeartbeat() { if (hbTimer) { clearInterval(hbTimer); hbTimer = null; } }
+
+  function detectRoute() {
+    if (!conn || !conn.peerConnection || !conn.peerConnection.getStats) { setRow('Route', 'unbekannt', 'warn'); return; }
+    conn.peerConnection.getStats().then(function (stats) {
+      var byId = {}, pair = null;
+      stats.forEach(function (r) { byId[r.id] = r; });
+      stats.forEach(function (r) {
+        if (r.type === 'transport' && r.selectedCandidatePairId) pair = byId[r.selectedCandidatePairId];
+      });
+      if (!pair) stats.forEach(function (r) {
+        if (r.type === 'candidate-pair' && (r.selected || (r.nominated && r.state === 'succeeded'))) pair = r;
+      });
+      if (!pair) { setRow('Route', 'unbekannt', 'warn'); log('Weg nicht ermittelbar'); return; }
+      var l = byId[pair.localCandidateId], r = byId[pair.remoteCandidateId];
+      var lt = l && l.candidateType, rt = r && r.candidateType;
+      log('Weg: lokal=' + lt + ', Gegenseite=' + rt);
+      if (lt === 'host' && rt === 'host') setRow('Route', 'direkt im WLAN', 'ok');
+      else if (lt === 'relay' || rt === 'relay') setRow('Route', 'über Relay-Server', 'warn');
+      else setRow('Route', 'über Router (' + (lt || '?') + '/' + (rt || '?') + ')', 'warn');
+    }).catch(function (e) { log('Weg-Abfrage: ' + e.message); });
+  }
+
+  // ── Raum erstellen (Handy 1) ───────────────────────────────────────────────
+  function startHost(attempt) {
+    role = 'host';
+    attempt = attempt || 0;
+    if (!attempt) code = randomCode();
+    $('codeLabel').textContent = 'Raumcode für Handy 2';
+    $('codeBig').textContent = code;
+    $('roomHint').textContent = 'Warte auf Handy 2 …';
+    setSignal('verbinde …', 'warn');
+    setLink('wartet auf Handy 2', 'warn');
+    show('room');
+
+    peer = new Peer(APP_PREFIX + code, PEER_OPTS);
+    peer.on('open', function () {
+      setSignal('verbunden', 'ok');
+      log('Raum ' + code + ' ist offen');
+    });
+    peer.on('connection', function (c) {
+      var sameGuest = conn && conn.peer === c.peer;
+      var alive = conn && conn.open && (Date.now() - lastPong < 8000);
+      if (alive && !sameGuest) {
+        log('Weitere Verbindung abgewiesen');
+        c.on('open', function () { try { c.send({ type: 'busy' }); } catch (e) {} setTimeout(function () { c.close(); }, 300); });
+        return;
+      }
+      log('Handy 2 verbindet sich');
+      attachConn(c);
+    });
+    peer.on('disconnected', function () {
+      if (left) return;
+      setSignal('getrennt', 'bad');
+      log('Vermittlungsserver getrennt, verbinde neu');
+      try { peer.reconnect(); } catch (e) {}
+    });
+    peer.on('error', function (err) {
+      log('Fehler: ' + (err && err.type));
+      if (err && err.type === 'unavailable-id' && attempt < 5) {
+        try { peer.destroy(); } catch (e) {}
+        code = randomCode();
+        startHost(attempt + 1);
+        return;
+      }
+      setSignal(errorText(err), 'bad');
+    });
+  }
+
+  // ── Beitreten (Handy 2) ────────────────────────────────────────────────────
+  function startGuest(c) {
+    role = 'guest';
+    code = c;
+    $('codeLabel').textContent = 'Raumcode';
+    $('codeBig').textContent = code;
+    $('roomHint').textContent = 'Verbinde mit Handy 1 …';
+    setSignal('verbinde …', 'warn');
+    setLink('–', '');
+    show('room');
+    makeGuestPeer();
+  }
+
+  function makeGuestPeer() {
+    if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
+    peer = new Peer(PEER_OPTS);
+    peer.on('open', function () {
+      setSignal('verbunden', 'ok');
+      log('Beim Vermittlungsserver angemeldet');
+      if (!(conn && conn.open)) connectToHost();
+    });
+    peer.on('disconnected', function () {
+      if (left) return;
+      setSignal('getrennt', 'bad');
+      log('Vermittlungsserver getrennt');
+      scheduleReconnect(1000);
+    });
+    peer.on('error', function (err) {
+      log('Fehler: ' + (err && err.type));
+      if (err && err.type === 'peer-unavailable') {
+        setLink('Raum nicht gefunden', 'bad');
+        $('roomHint').textContent = errorText(err);
+        scheduleReconnect(3000);
+        return;
+      }
+      setSignal(errorText(err), 'bad');
+      scheduleReconnect(3000);
+    });
+  }
+
+  function connectToHost() {
+    if (!peer || peer.destroyed || peer.disconnected) return;
+    if (conn && !conn.open && !conn._wasOpen && Date.now() - connStart < 8000) return;
+    log('Verbinde mit Raum ' + code);
+    attachConn(peer.connect(APP_PREFIX + code, { reliable: true, serialization: 'json' }));
+  }
+
+  // ── Wiederverbinden ────────────────────────────────────────────────────────
+  function scheduleReconnect(delay) {
+    if (role !== 'guest' || rcTimer || left) return;
+    rcTimer = setTimeout(function () {
+      rcTimer = null;
+      if (left || (conn && conn.open)) { rcTries = 0; return; }
+      if (rcTries >= 20) { log('Aufgegeben nach 20 Versuchen. Bitte „Neu verbinden“ tippen.'); return; }
+      rcTries++;
+      log('Wiederverbinden, Versuch ' + rcTries);
+      doReconnect();
+      scheduleReconnect(3000);
+    }, delay);
+  }
+
+  function doReconnect() {
+    if (role === 'guest') {
+      if (!peer || peer.destroyed) { makeGuestPeer(); return; }
+      if (peer.disconnected) { try { peer.reconnect(); } catch (e) { log('Neu anmelden: ' + e.message); } return; }
+      connectToHost();
+    } else if (role === 'host') {
+      if (peer && peer.disconnected) { try { peer.reconnect(); } catch (e) {} }
+    }
+  }
+
+  function checkAlive() {
+    if (!conn || !conn.open) return;
+    var t0 = Date.now();
+    send({ type: 'ping', t: t0 });
+    setTimeout(function () {
+      if (left || !conn) return;
+      if (lastPong < t0) {
+        log('Verbindung nach Pause nicht mehr aktiv');
+        try { conn.close(); } catch (e) {}
+        setLink(role === 'host' ? 'wartet auf Handy 2' : 'getrennt', 'bad');
+        if (role === 'guest') scheduleReconnect(300);
+      }
+    }, 3500);
+  }
+
+  // ── Bildschirm wach halten ─────────────────────────────────────────────────
+  function requestWake() {
+    try {
+      if (!('wakeLock' in navigator)) { log('Wach-Modus nicht verfügbar'); return; }
+      if (wakeLock && !wakeLock.released) return;
+      navigator.wakeLock.request('screen').then(function (l) {
+        wakeLock = l;
+        log('Bildschirm bleibt an');
+        l.addEventListener('release', function () { log('Wach-Modus beendet'); });
+      }).catch(function (e) { log('Wach-Modus: ' + e.name); });
+    } catch (e) { log('Wach-Modus: ' + e.message); }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!role || left) return;
+    if (document.visibilityState === 'hidden') {
+      log('Seite im Hintergrund');
+    } else {
+      log('Seite wieder sichtbar');
+      setTimeout(function () {
+        if (left) return;
+        if (conn && conn.open) { checkAlive(); requestWake(); }
+        else if (role === 'guest') scheduleReconnect(300);
+        if (peer && peer.disconnected) { try { peer.reconnect(); } catch (e) {} }
+      }, 800);
+    }
+  });
+
+  // ── Bedienung ──────────────────────────────────────────────────────────────
+  $('btnHost').addEventListener('click', function () {
+    if (typeof Peer === 'undefined') { $('startErr').textContent = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; return; }
+    left = false;
+    log('Raum erstellen');
+    requestWake();
+    startHost(0);
+  });
+
+  $('btnJoin').addEventListener('click', function () {
+    var c = $('joinCode').value.replace(/\D/g, '');
+    if (c.length !== 4) { $('startErr').textContent = 'Bitte den 4-stelligen Code eingeben.'; return; }
+    if (typeof Peer === 'undefined') { $('startErr').textContent = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; return; }
+    $('startErr').textContent = '';
+    left = false;
+    log('Beitreten mit Code ' + c);
+    requestWake();
+    startGuest(c);
+  });
+
+  $('joinCode').addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 4);
+    $('startErr').textContent = '';
+  });
+
+  $('btnHello').addEventListener('click', function () {
+    var text = 'Hallo von ' + (role === 'host' ? 'Handy 1' : 'Handy 2') + ' (' + now() + ')';
+    if (send({ type: 'hello', text: text })) addChat('Du: ' + text, true);
+    else addChat('Nicht gesendet: keine Verbindung.', true);
+  });
+
+  $('btnPing').addEventListener('click', function () {
+    if (!send({ type: 'ping', t: Date.now() })) addChat('Nicht gesendet: keine Verbindung.', true);
+  });
+
+  $('btnReconnect').addEventListener('click', function () {
+    log('Neu verbinden (manuell)');
+    rcTries = 0;
+    if (conn && conn.open) { checkAlive(); return; }
+    if (role === 'guest') { if (rcTimer) { clearTimeout(rcTimer); rcTimer = null; } doReconnect(); scheduleReconnect(3000); }
+    else doReconnect();
+  });
+
+  $('btnCopy').addEventListener('click', function () {
+    var btn = this;
+    var summary = [
+      'Vermittlung: ' + $('vSignal').textContent,
+      'Verbindung: ' + $('vLink').textContent,
+      'Weg: ' + $('vRoute').textContent,
+      'Antwortzeit: ' + $('vRtt').textContent,
+      'Wiederverbunden: ' + $('vRe').textContent,
+      'Rolle: ' + (role === 'host' ? 'Handy 1' : 'Handy 2'),
+      '',
+      logLines.join('\n')
+    ].join('\n');
+    function done(ok) {
+      btn.textContent = ok ? 'Kopiert' : 'Kopieren nicht möglich';
+      setTimeout(function () { btn.textContent = 'Protokoll kopieren'; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summary).then(function () { done(true); }, function () { done(false); });
+    } else {
+      done(false);
+    }
+  });
+
+  $('btnLeave').addEventListener('click', function () {
+    left = true;
+    stopHeartbeat();
+    if (rcTimer) { clearTimeout(rcTimer); rcTimer = null; }
+    try { if (conn) conn.close(); } catch (e) {}
+    try { if (peer) peer.destroy(); } catch (e) {}
+    try { if (wakeLock) wakeLock.release(); } catch (e) {}
+    peer = null; conn = null; role = null; everConnected = false; reconnects = 0; rtts = [];
+    $('vRe').textContent = '0×'; $('dRe').className = 'dot';
+    setRow('Rtt', '–', ''); setRow('Route', '–', '');
+    $('chat').innerHTML = '<div class="empty">Noch nichts empfangen.</div>';
+    show('start');
+  });
+
+  window.addEventListener('error', function (e) { log('Skriptfehler: ' + e.message); });
+  log('Seite geladen');
+})();
+</script>
+</body>
+</html>

@@ -6,7 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Quiz-Abend">
-<title>Quiz-Abend · Verbindungstest</title>
+<link rel="apple-touch-icon" href="icon.png">
+<title>Quiz-Abend</title>
 <style>
   :root {
     --ink: #1A1916;
@@ -38,14 +39,18 @@
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
+  button { font-family: inherit; touch-action: manipulation; -webkit-appearance: none; appearance: none; }
   .wrap {
     max-width: 480px;
     margin: 0 auto;
-    padding: calc(20px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+    padding: calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   }
   .logo { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
-  .sub { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 22px; }
+  .sub { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 20px; }
+  h1 { font-size: 26px; font-weight: 300; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 8px; }
+  h1 strong { font-weight: 600; }
   .lead { font-size: 15px; color: var(--ink-soft); line-height: 1.65; margin-bottom: 18px; }
+
   .card {
     background: var(--white);
     border: 1px solid var(--border-soft);
@@ -55,12 +60,8 @@
   }
   .label {
     font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--ink-faint); margin-bottom: 8px;
+    color: var(--ink-faint); margin-bottom: 10px;
   }
-  .step { font-size: 14px; color: var(--ink-soft); margin-bottom: 6px; }
-  .step:last-child { margin-bottom: 0; }
-  .step b { color: var(--ink); font-weight: 600; }
-
   .btn {
     display: block; width: 100%;
     min-height: 52px;
@@ -69,549 +70,850 @@
     border: 1.5px solid var(--border);
     background: var(--white);
     color: var(--ink);
-    font-family: inherit; font-size: 16px; font-weight: 600;
+    font-size: 16px; font-weight: 600;
     cursor: pointer;
     margin-bottom: 10px;
-    -webkit-appearance: none; appearance: none;
   }
   .btn:active { opacity: 0.7; }
   .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--paper); }
   .btn.ghost { background: transparent; color: var(--ink-soft); font-weight: 500; }
-  .btn[disabled] { opacity: 0.4; }
+  .btn.small { min-height: 44px; font-size: 14px; padding: 10px 14px; }
+  .btn[disabled] { opacity: 0.35; }
   .btnrow { display: flex; gap: 10px; }
   .btnrow .btn { flex: 1; }
+  .linkbtn { background: none; border: none; color: var(--ink-faint); font-size: 12px; text-decoration: underline; padding: 8px 4px; cursor: pointer; }
+  .center { text-align: center; }
 
-  .or { text-align: center; font-size: 12px; color: var(--ink-faint); letter-spacing: 0.08em; margin: 6px 0 12px; }
-  .fieldlabel { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  .notice { background: var(--accent-soft); color: #633806; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; margin-bottom: 14px; }
+  .errtext { color: var(--red); font-size: 13px; min-height: 18px; margin-top: 6px; }
+
   input[type="text"] {
     width: 100%;
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 13px 14px;
-    font-family: inherit; font-size: 22px; letter-spacing: 0.3em; text-align: center;
+    padding: 12px 14px;
+    font-family: inherit; font-size: 16px;
     color: var(--ink);
     outline: none;
     margin-bottom: 10px;
     -webkit-appearance: none; appearance: none;
   }
   input[type="text"]:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(26,25,22,0.07); }
-  input::placeholder { color: var(--border); }
-  .err { font-size: 13px; color: var(--red); min-height: 18px; margin-top: 2px; }
+  input.big { font-size: 24px; text-align: center; padding: 14px; }
 
-  .codebox { text-align: center; padding: 18px 16px; }
-  .codelabel { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
-  .code { font-size: 44px; font-weight: 300; letter-spacing: 0.22em; padding-left: 0.22em; font-variant-numeric: tabular-nums; }
-  .roomhint { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
-
-  .row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-soft); }
-  .row:last-child { border-bottom: none; }
-  .row .k { flex: 0 0 112px; font-size: 12px; color: var(--ink-faint); letter-spacing: 0.04em; }
-  .row .v { flex: 1; font-size: 14px; font-weight: 500; text-align: right; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
-  .dot.ok { background: var(--green); }
-  .dot.warn { background: var(--accent); }
-  .dot.bad { background: var(--red); }
-
-  .chat { max-height: 160px; overflow-y: auto; font-size: 14px; }
-  .chat div { padding: 4px 0; border-bottom: 1px solid var(--border-soft); }
-  .chat div:last-child { border-bottom: none; }
-  .chat .me { color: var(--ink-soft); }
-  .chat .empty { color: var(--ink-faint); font-style: italic; }
-
-  .test { background: var(--accent-soft); border-color: transparent; }
-  .test .label { color: var(--accent); }
-  .test p { font-size: 13px; color: #633806; line-height: 1.6; }
-
-  details { margin-bottom: 14px; }
-  summary { font-size: 13px; color: var(--ink-soft); padding: 8px 0; cursor: pointer; }
-  pre {
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-    font-size: 11px; line-height: 1.5;
-    background: var(--white); border: 1px solid var(--border-soft); border-radius: var(--radius-sm);
-    padding: 10px 12px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word;
-    -webkit-user-select: text; user-select: text;
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 9px 15px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-size: 14px; font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
   }
+  .chip.sel { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .chip:active { opacity: 0.7; }
+  .seg { display: flex; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--white); }
+  .seg button { flex: 1; padding: 12px 8px; border: none; background: transparent; font-size: 14px; font-weight: 500; color: var(--ink-soft); cursor: pointer; }
+  .seg button.sel { background: var(--ink); color: var(--paper); }
+  .stepper { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .stepper button { width: 52px; height: 52px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--white); font-size: 24px; color: var(--ink); cursor: pointer; }
+  .stepper button:active { opacity: 0.7; }
+  .stepper .val { flex: 1; text-align: center; font-size: 24px; font-weight: 300; }
+  .stepper .unit { display: block; font-size: 11px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400; }
+  .hint { font-size: 13px; color: var(--ink-soft); margin-top: 10px; }
+  .hint.warn { color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { padding: 7px 0; border-bottom: 1px solid var(--border-soft); text-align: left; }
+  th { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .scorebar { display: flex; gap: 10px; margin-bottom: 8px; }
+  .pbox { flex: 1; background: var(--white); border: 1.5px solid var(--border-soft); border-radius: var(--radius); padding: 9px 12px; text-align: center; min-width: 0; }
+  .pbox.active { border-color: var(--ink); }
+  .pname { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pscore { font-size: 28px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .progress { font-size: 12px; color: var(--ink-faint); text-align: center; margin-bottom: 14px; letter-spacing: 0.04em; }
+
+  .meta { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+  .qtext { font-size: 20px; line-height: 1.4; margin-bottom: 16px; }
+  .answers { display: flex; flex-direction: column; gap: 10px; }
+  .ans {
+    display: flex; align-items: center; gap: 12px;
+    text-align: left;
+    min-height: 58px; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--white); color: var(--ink);
+    font-size: 16px; cursor: pointer;
+  }
+  .ans:active { background: var(--paper-warm); }
+  .ans .letter { flex: 0 0 26px; height: 26px; border-radius: 50%; background: var(--paper-warm); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+  .ans.ok { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+  .ans.bad { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+  .ans.dim { opacity: 0.45; }
+  .ans.gone { visibility: hidden; }
+  .ans[disabled] { cursor: default; }
+  .ans.tf { justify-content: center; font-weight: 600; }
+
+  .timer { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .tbar-wrap { flex: 1; height: 6px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+  .tbar { height: 100%; width: 100%; background: var(--ink); }
+  .tbar.low { background: var(--red); }
+  .tlab { min-width: 24px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+  .jokers { display: flex; gap: 10px; margin-top: 14px; }
+  .jokers .btn { margin-bottom: 0; }
+
+  .banner { padding: 12px 14px; border-radius: var(--radius-sm); margin: 14px 0; font-weight: 600; }
+  .banner small { display: block; font-weight: 400; opacity: 0.85; margin-top: 2px; }
+  .banner.good { background: var(--green-soft); color: var(--green); }
+  .banner.miss { background: var(--red-soft); color: var(--red); }
+  .info { font-size: 14px; color: var(--ink-soft); margin-bottom: 14px; }
+  .big { font-size: 22px; font-weight: 300; line-height: 1.3; }
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 15px; }
+  .row:last-child { border-bottom: none; }
+  .row .k { color: var(--ink-soft); }
+  .row .v { font-weight: 600; text-align: right; }
+  .trophy { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="logo">Quiz-Abend</div>
-  <div class="sub">Verbindungstest</div>
+<div class="wrap" id="app"><p class="lead">Lade Fragen …</p></div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
 
-  <section id="vStart">
-    <p class="lead">Dieser Test prüft, ob sich zwei iPhones im Heim-WLAN zuverlässig verbinden. Beide Handys öffnen diese Seite.</p>
-    <div class="card">
-      <div class="step"><b>Handy 1</b> tippt auf „Raum erstellen“ und liest den Code vor.</div>
-      <div class="step"><b>Handy 2</b> gibt den Code ein und tippt auf „Beitreten“.</div>
-    </div>
-    <button class="btn primary" id="btnHost">Raum erstellen (Handy 1)</button>
-    <div class="or">oder</div>
-    <label class="fieldlabel" for="joinCode">Code von Handy 1</label>
-    <input type="text" id="joinCode" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" autocomplete="off">
-    <button class="btn" id="btnJoin">Beitreten (Handy 2)</button>
-    <div class="err" id="startErr"></div>
-  </section>
-
-  <section id="vRoom" hidden>
-    <div class="card codebox">
-      <div class="codelabel" id="codeLabel">Raumcode</div>
-      <div class="code" id="codeBig">----</div>
-      <div class="roomhint" id="roomHint"></div>
-    </div>
-
-    <div class="card">
-      <div class="label">Status</div>
-      <div class="row"><span class="dot" id="dSignal"></span><span class="k">Vermittlung</span><span class="v" id="vSignal">–</span></div>
-      <div class="row"><span class="dot" id="dLink"></span><span class="k">Verbindung</span><span class="v" id="vLink">–</span></div>
-      <div class="row"><span class="dot" id="dRoute"></span><span class="k">Weg</span><span class="v" id="vRoute">–</span></div>
-      <div class="row"><span class="dot" id="dRtt"></span><span class="k">Antwortzeit</span><span class="v" id="vRtt">–</span></div>
-      <div class="row"><span class="dot" id="dRe"></span><span class="k">Wiederverbunden</span><span class="v" id="vRe">0×</span></div>
-    </div>
-
-    <div class="btnrow">
-      <button class="btn primary" id="btnHello">Hallo senden</button>
-      <button class="btn" id="btnPing">Ping</button>
-    </div>
-
-    <div class="card">
-      <div class="label">Nachrichten</div>
-      <div class="chat" id="chat"><div class="empty">Noch nichts empfangen.</div></div>
-    </div>
-
-    <div class="card test">
-      <div class="label">Sperrbildschirm-Test</div>
-      <p>Sobald die Verbindung steht: Sperre bei einem Handy den Bildschirm für etwa 30 Sekunden, entsperre es wieder und schau, ob oben „verbunden“ zurückkommt und der Zähler „Wiederverbunden“ hochgeht.</p>
-    </div>
-
-    <button class="btn" id="btnReconnect">Neu verbinden</button>
-    <details>
-      <summary>Protokoll anzeigen</summary>
-      <pre id="logBox"></pre>
-    </details>
-    <button class="btn" id="btnCopy">Protokoll kopieren</button>
-    <button class="btn ghost" id="btnLeave">Beenden</button>
-  </section>
-</div>
-
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (function () {
   'use strict';
 
-  // ── Zustand ────────────────────────────────────────────────────────────────
-  var APP_PREFIX = 'qa-ascend-';
-  var PEER_OPTS = { debug: 1 };
-
-  var peer = null;
-  var conn = null;
-  var role = null;          // 'host' | 'guest'
-  var code = '';
-  var left = false;
-  var everConnected = false;
-  var reconnects = 0;
-  var lastPong = 0;
-  var connStart = 0;
-  var hbTimer = null;
-  var rcTimer = null;
-  var rcTries = 0;
-  var wakeLock = null;
-  var rtts = [];
-  var logLines = [];
-
-  var $ = function (id) { return document.getElementById(id); };
+  // ── Konstanten ─────────────────────────────────────────────────────────────
+  var STORE_KEY = 'quiz_abend_v1';
+  var BASE_KEY = 'quiz_abend_base_v1';
+  var TIME = { mc: 20, tf: 20, est: 30 };
+  var POINTS = 10, BONUS_MAX = 5, EXACT_BONUS = 5;
+  var LEVELS = { 0: 'Gemischt', 1: 'Leicht', 2: 'Mittel', 3: 'Schwer' };
+  var TYPE_LABELS = { mc: 'Multiple Choice', tf: 'Wahr oder falsch', est: 'Schätzfragen' };
+  var DEFAULTS = { cats: null, level: 0, types: { mc: true, tf: true, est: true }, mode: 'count', n: 10, target: 100 };
 
   // ── Hilfsfunktionen ────────────────────────────────────────────────────────
-  function now() { return new Date().toLocaleTimeString('de-DE'); }
+  var app = document.getElementById('app');
 
-  function log(msg) {
-    logLines.push(now() + '  ' + msg);
-    if (logLines.length > 400) logLines.shift();
-    var box = $('logBox');
-    if (box) { box.textContent = logLines.join('\n'); box.scrollTop = box.scrollHeight; }
+  function el(tag, props) {
+    var e = document.createElement(tag);
+    if (props) Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) append(e, arguments[i]);
+    return e;
   }
-
-  function setRow(name, text, level) {
-    $('v' + name).textContent = text;
-    $('d' + name).className = 'dot' + (level ? ' ' + level : '');
+  function append(parent, kid) {
+    if (kid === null || kid === undefined || kid === false) return;
+    if (Array.isArray(kid)) { kid.forEach(function (k) { append(parent, k); }); return; }
+    parent.appendChild(kid.nodeType ? kid : document.createTextNode(String(kid)));
   }
-  function setSignal(t, l) { setRow('Signal', t, l); }
-  function setLink(t, l) { setRow('Link', t, l); }
-
-  function randomCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
-
-  function show(view) {
-    $('vStart').hidden = view !== 'start';
-    $('vRoom').hidden = view !== 'room';
-  }
-
-  function addChat(text, mine) {
-    var box = $('chat');
-    var empty = box.querySelector('.empty');
-    if (empty) empty.remove();
-    var d = document.createElement('div');
-    if (mine) d.className = 'me';
-    d.textContent = text;
-    box.appendChild(d);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function send(obj) {
-    if (conn && conn.open) {
-      try { conn.send(obj); return true; } catch (e) { log('Senden fehlgeschlagen: ' + e.message); }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
     }
-    return false;
+    return a;
+  }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  // ── Speicher ───────────────────────────────────────────────────────────────
+  function loadStore() {
+    var s = {};
+    try { s = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (e) { s = {}; }
+    var st = s.settings || {};
+    return {
+      names: Array.isArray(s.names) ? s.names : ['', ''],
+      bilanz: s.bilanz && typeof s.bilanz === 'object' ? s.bilanz : {},
+      imported: Array.isArray(s.imported) ? s.imported : [],
+      catLabels: s.catLabels && typeof s.catLabels === 'object' ? s.catLabels : {},
+      seen: Array.isArray(s.seen) ? s.seen : [],
+      settings: Object.assign({}, DEFAULTS, st, { types: Object.assign({}, DEFAULTS.types, st.types || {}) }),
+      game: s.game || null
+    };
+  }
+  var S = loadStore();
+  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }
+  function persistGame() {
+    if (!G) return;
+    var copy = Object.assign({}, G); delete copy.pool;
+    S.game = copy; save();
   }
 
-  function errorText(err) {
-    var t = err && err.type;
-    if (t === 'peer-unavailable') return 'Raum nicht gefunden. Code prüfen, Handy 1 muss den Raum zuerst erstellen.';
-    if (t === 'network' || t === 'socket-error' || t === 'socket-closed') return 'Keine Verbindung zum Vermittlungsserver. Internet am Router prüfen.';
-    if (t === 'server-error') return 'Der Vermittlungsserver antwortet nicht.';
-    if (t === 'browser-incompatible') return 'Dieser Browser unterstützt die Verbindung nicht.';
-    if (t === 'webrtc') return 'Direkte Verbindung fehlgeschlagen.';
-    return 'Fehler: ' + (t || (err && err.message) || 'unbekannt');
+  // ── Fragen ─────────────────────────────────────────────────────────────────
+  var base = { kategorien: {}, fragen: [] };
+  var loadError = null;
+
+  function cleanQ(q) {
+    if (!q || typeof q !== 'object') return null;
+    var id = String(q.id || '').trim(), kat = String(q.kat || '').trim(), frage = String(q.frage || '').trim();
+    var stufe = Number(q.stufe), typ = q.typ;
+    if (!id || !kat || !frage || [1, 2, 3].indexOf(stufe) < 0) return null;
+    var out = { id: id, kat: kat, stufe: stufe, typ: typ, frage: frage };
+    if (q.thema) out.thema = String(q.thema);
+    if (q.info) out.info = String(q.info);
+    if (typ === 'mc') {
+      if (!Array.isArray(q.antworten) || q.antworten.length !== 4) return null;
+      var r = Number(q.richtig);
+      if (!Number.isInteger(r) || r < 0 || r > 3) return null;
+      out.antworten = q.antworten.map(String); out.richtig = r;
+    } else if (typ === 'tf') {
+      if (typeof q.richtig !== 'boolean') return null;
+      out.richtig = q.richtig;
+    } else if (typ === 'est') {
+      var n = Number(q.richtig);
+      if (q.richtig === null || q.richtig === '' || !isFinite(n)) return null;
+      out.richtig = n; out.einheit = String(q.einheit || ''); out.toleranz = Number(q.toleranz) || 0;
+    } else return null;
+    return out;
   }
 
-  // ── Verbindung zwischen den Handys ─────────────────────────────────────────
-  function attachConn(c) {
-    if (conn && conn !== c) { try { conn.close(); } catch (e) {} }
-    conn = c;
-    connStart = Date.now();
-    setLink('verbinde …', 'warn');
-
-    c.on('open', function () {
-      if (conn !== c) return;
-      c._wasOpen = true;
-      lastPong = Date.now();
-      rcTries = 0;
-      if (everConnected) { reconnects++; $('vRe').textContent = reconnects + '×'; $('dRe').className = 'dot ok'; }
-      everConnected = true;
-      setLink('verbunden', 'ok');
-      $('roomHint').textContent = role === 'host' ? 'Handy 2 ist verbunden.' : 'Mit Handy 1 verbunden.';
-      log('Datenverbindung offen' + (reconnects ? ' (Wiederverbindung Nr. ' + reconnects + ')' : ''));
-      startHeartbeat();
-      send({ type: 'hello', text: 'Hallo von ' + (role === 'host' ? 'Handy 1' : 'Handy 2') + ' (' + now() + ')' });
-      setTimeout(detectRoute, 1500);
-      requestWake();
+  function loadBase() {
+    return fetch('fragen.json', { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d || !Array.isArray(d.fragen)) throw new Error('Format');
+      base = { kategorien: d.kategorien || {}, fragen: d.fragen.map(cleanQ).filter(Boolean) };
+      try { localStorage.setItem(BASE_KEY, JSON.stringify(base)); } catch (e) {}
+    }).catch(function (e) {
+      try {
+        var c = JSON.parse(localStorage.getItem(BASE_KEY) || 'null');
+        if (c && Array.isArray(c.fragen) && c.fragen.length) { base = c; return; }
+      } catch (x) {}
+      loadError = e && e.message ? e.message : 'Fehler';
     });
-
-    c.on('data', function (d) { if (conn === c) onData(d); });
-
-    c.on('close', function () {
-      if (conn !== c) return;
-      log('Verbindung geschlossen');
-      stopHeartbeat();
-      setLink(role === 'host' ? 'wartet auf Handy 2' : 'getrennt', 'bad');
-      if (role === 'guest') scheduleReconnect(1500);
-    });
-
-    c.on('error', function (e) {
-      if (conn !== c) return;
-      log('Verbindungsfehler: ' + (e && e.type ? e.type : e));
-    });
-
-    c.on('iceStateChanged', function (s) { log('ICE-Status: ' + s); });
   }
 
-  function onData(d) {
-    if (!d || typeof d !== 'object') return;
-    lastPong = Date.now();
-    if (d.type === 'ping') {
-      send({ type: 'pong', t: d.t });
-    } else if (d.type === 'pong') {
-      var rtt = Date.now() - d.t;
-      if (rtt >= 0 && rtt < 60000) {
-        rtts.push(rtt); if (rtts.length > 10) rtts.shift();
-        var avg = Math.round(rtts.reduce(function (a, b) { return a + b; }, 0) / rtts.length);
-        setRow('Rtt', rtt + ' ms (Ø ' + avg + ' ms)', rtt < 150 ? 'ok' : 'warn');
-      }
-      if ($('vLink').textContent === 'keine Antwort') { setLink('verbunden', 'ok'); log('Antwort wieder da'); }
-    } else if (d.type === 'hello') {
-      addChat('Gegenseite: ' + String(d.text).slice(0, 200), false);
-    } else if (d.type === 'busy') {
-      log('Raum ist schon belegt');
-      $('roomHint').textContent = 'Der Raum ist schon belegt.';
+  function allQuestions() { return base.fragen.concat(S.imported); }
+  function catLabel(k) { return base.kategorien[k] || S.catLabels[k] || k; }
+  function allCatKeys() {
+    var seen = {}, keys = [];
+    allQuestions().forEach(function (q) { if (!seen[q.kat]) { seen[q.kat] = 1; keys.push(q.kat); } });
+    return keys;
+  }
+  function selectedCats() { var all = allCatKeys(); return S.settings.cats === null ? all : S.settings.cats.filter(function (k) { return all.indexOf(k) >= 0; }); }
+
+  function poolFor(st) {
+    var cats = st.cats === null ? null : st.cats;
+    return allQuestions().filter(function (q) {
+      return (!cats || cats.indexOf(q.kat) >= 0) && (st.level === 0 || q.stufe === st.level) && st.types[q.typ];
+    });
+  }
+
+  function makePool(st) {
+    var seen = {}; S.seen.forEach(function (id) { seen[id] = 1; });
+    var p = poolFor(st);
+    function group(typ) {
+      var a = p.filter(function (q) { return q.typ === typ; });
+      var un = shuffle(a.filter(function (q) { return !seen[q.id]; }));
+      var se = shuffle(a.filter(function (q) { return seen[q.id]; }));
+      return un.concat(se);
     }
+    return { mc: group('mc'), tf: group('tf'), est: group('est') };
   }
 
-  function startHeartbeat() {
-    stopHeartbeat();
-    hbTimer = setInterval(function () {
-      if (conn && conn.open) {
-        send({ type: 'ping', t: Date.now() });
-        if (Date.now() - lastPong > 8000 && $('vLink').textContent === 'verbunden') {
-          setLink('keine Antwort', 'warn');
-          log('Keine Antwort seit 8 Sekunden');
-        }
-      }
-    }, 2000);
-  }
-  function stopHeartbeat() { if (hbTimer) { clearInterval(hbTimer); hbTimer = null; } }
-
-  function detectRoute() {
-    if (!conn || !conn.peerConnection || !conn.peerConnection.getStats) { setRow('Route', 'unbekannt', 'warn'); return; }
-    conn.peerConnection.getStats().then(function (stats) {
-      var byId = {}, pair = null;
-      stats.forEach(function (r) { byId[r.id] = r; });
-      stats.forEach(function (r) {
-        if (r.type === 'transport' && r.selectedCandidatePairId) pair = byId[r.selectedCandidatePairId];
-      });
-      if (!pair) stats.forEach(function (r) {
-        if (r.type === 'candidate-pair' && (r.selected || (r.nominated && r.state === 'succeeded'))) pair = r;
-      });
-      if (!pair) { setRow('Route', 'unbekannt', 'warn'); log('Weg nicht ermittelbar'); return; }
-      var l = byId[pair.localCandidateId], r = byId[pair.remoteCandidateId];
-      var lt = l && l.candidateType, rt = r && r.candidateType;
-      log('Weg: lokal=' + lt + ', Gegenseite=' + rt);
-      if (lt === 'host' && rt === 'host') setRow('Route', 'direkt im WLAN', 'ok');
-      else if (lt === 'relay' || rt === 'relay') setRow('Route', 'über Relay-Server', 'warn');
-      else setRow('Route', 'über Router (' + (lt || '?') + '/' + (rt || '?') + ')', 'warn');
-    }).catch(function (e) { log('Weg-Abfrage: ' + e.message); });
+  function markSeen(q) {
+    if (S.seen.indexOf(q.id) < 0) S.seen.push(q.id);
+    if (S.seen.length > 1000) S.seen = S.seen.slice(-800);
   }
 
-  // ── Raum erstellen (Handy 1) ───────────────────────────────────────────────
-  function startHost(attempt) {
-    role = 'host';
-    attempt = attempt || 0;
-    if (!attempt) code = randomCode();
-    $('codeLabel').textContent = 'Raumcode für Handy 2';
-    $('codeBig').textContent = code;
-    $('roomHint').textContent = 'Warte auf Handy 2 …';
-    setSignal('verbinde …', 'warn');
-    setLink('wartet auf Handy 2', 'warn');
-    show('room');
-
-    peer = new Peer(APP_PREFIX + code, PEER_OPTS);
-    peer.on('open', function () {
-      setSignal('verbunden', 'ok');
-      log('Raum ' + code + ' ist offen');
-    });
-    peer.on('connection', function (c) {
-      var sameGuest = conn && conn.peer === c.peer;
-      var alive = conn && conn.open && (Date.now() - lastPong < 8000);
-      if (alive && !sameGuest) {
-        log('Weitere Verbindung abgewiesen');
-        c.on('open', function () { try { c.send({ type: 'busy' }); } catch (e) {} setTimeout(function () { c.close(); }, 300); });
-        return;
-      }
-      log('Handy 2 verbindet sich');
-      attachConn(c);
-    });
-    peer.on('disconnected', function () {
-      if (left) return;
-      setSignal('getrennt', 'bad');
-      log('Vermittlungsserver getrennt, verbinde neu');
-      try { peer.reconnect(); } catch (e) {}
-    });
-    peer.on('error', function (err) {
-      log('Fehler: ' + (err && err.type));
-      if (err && err.type === 'unavailable-id' && attempt < 5) {
-        try { peer.destroy(); } catch (e) {}
-        code = randomCode();
-        startHost(attempt + 1);
-        return;
-      }
-      setSignal(errorText(err), 'bad');
-    });
-  }
-
-  // ── Beitreten (Handy 2) ────────────────────────────────────────────────────
-  function startGuest(c) {
-    role = 'guest';
-    code = c;
-    $('codeLabel').textContent = 'Raumcode';
-    $('codeBig').textContent = code;
-    $('roomHint').textContent = 'Verbinde mit Handy 1 …';
-    setSignal('verbinde …', 'warn');
-    setLink('–', '');
-    show('room');
-    makeGuestPeer();
-  }
-
-  function makeGuestPeer() {
-    if (peer && !peer.destroyed) { try { peer.destroy(); } catch (e) {} }
-    peer = new Peer(PEER_OPTS);
-    peer.on('open', function () {
-      setSignal('verbunden', 'ok');
-      log('Beim Vermittlungsserver angemeldet');
-      if (!(conn && conn.open)) connectToHost();
-    });
-    peer.on('disconnected', function () {
-      if (left) return;
-      setSignal('getrennt', 'bad');
-      log('Vermittlungsserver getrennt');
-      scheduleReconnect(1000);
-    });
-    peer.on('error', function (err) {
-      log('Fehler: ' + (err && err.type));
-      if (err && err.type === 'peer-unavailable') {
-        setLink('Raum nicht gefunden', 'bad');
-        $('roomHint').textContent = errorText(err);
-        scheduleReconnect(3000);
-        return;
-      }
-      setSignal(errorText(err), 'bad');
-      scheduleReconnect(3000);
-    });
-  }
-
-  function connectToHost() {
-    if (!peer || peer.destroyed || peer.disconnected) return;
-    if (conn && !conn.open && !conn._wasOpen && Date.now() - connStart < 8000) return;
-    log('Verbinde mit Raum ' + code);
-    attachConn(peer.connect(APP_PREFIX + code, { reliable: true, serialization: 'json' }));
-  }
-
-  // ── Wiederverbinden ────────────────────────────────────────────────────────
-  function scheduleReconnect(delay) {
-    if (role !== 'guest' || rcTimer || left) return;
-    rcTimer = setTimeout(function () {
-      rcTimer = null;
-      if (left || (conn && conn.open)) { rcTries = 0; return; }
-      if (rcTries >= 20) { log('Aufgegeben nach 20 Versuchen. Bitte „Neu verbinden“ tippen.'); return; }
-      rcTries++;
-      log('Wiederverbinden, Versuch ' + rcTries);
-      doReconnect();
-      scheduleReconnect(3000);
-    }, delay);
-  }
-
-  function doReconnect() {
-    if (role === 'guest') {
-      if (!peer || peer.destroyed) { makeGuestPeer(); return; }
-      if (peer.disconnected) { try { peer.reconnect(); } catch (e) { log('Neu anmelden: ' + e.message); } return; }
-      connectToHost();
-    } else if (role === 'host') {
-      if (peer && peer.disconnected) { try { peer.reconnect(); } catch (e) {} }
+  function takeStd() {
+    var kinds = [];
+    if (G.pool.mc.length) kinds.push('mc');
+    if (G.pool.tf.length) kinds.push('tf');
+    if (!kinds.length) {
+      G.pool = makePool(G.settings);
+      if (G.pool.mc.length) kinds.push('mc');
+      if (G.pool.tf.length) kinds.push('tf');
+      if (!kinds.length) return null;
     }
+    var kind = kinds.length === 2 ? (Math.random() < 0.25 ? 'tf' : 'mc') : kinds[0];
+    var q = G.pool[kind].shift(); markSeen(q); return q;
+  }
+  function takeEst() {
+    if (!G.pool.est.length) { G.pool = makePool(G.settings); if (!G.pool.est.length) return null; }
+    var q = G.pool.est.shift(); markSeen(q); return q;
   }
 
-  function checkAlive() {
-    if (!conn || !conn.open) return;
-    var t0 = Date.now();
-    send({ type: 'ping', t: t0 });
-    setTimeout(function () {
-      if (left || !conn) return;
-      if (lastPong < t0) {
-        log('Verbindung nach Pause nicht mehr aktiv');
-        try { conn.close(); } catch (e) {}
-        setLink(role === 'host' ? 'wartet auf Handy 2' : 'getrennt', 'bad');
-        if (role === 'guest') scheduleReconnect(300);
+  // ── Spiel ──────────────────────────────────────────────────────────────────
+  var G = null;          // laufendes Spiel
+  var view = 'home';     // home | setup | play | result
+  var ui = {};           // Zustand der Spielansicht
+  var timerId = null;
+  var notice = '';
+
+  function newGame(st, names) {
+    G = {
+      settings: clone(st), names: names.slice(),
+      scores: [0, 0], right: [0, 0], stdAsked: [0, 0], estWins: [0, 0],
+      jokers: [{ fifty: 1, swap: 1 }, { fifty: 1, swap: 1 }],
+      queue: [], idx: 0, over: false, recorded: false, rounds: 0,
+      allowEst: false, allowStd: false
+    };
+    var pool = poolFor(G.settings);
+    G.allowEst = pool.some(function (q) { return q.typ === 'est'; });
+    G.allowStd = pool.some(function (q) { return q.typ !== 'est'; });
+    G.pool = makePool(G.settings);
+    if (G.settings.mode === 'count') buildCountQueue(); else extendTarget();
+    persistGame();
+  }
+
+  function buildCountQueue() {
+    var n = G.settings.n, estCount = G.pool.est.length, e = 0;
+    if (G.allowEst && !G.allowStd) e = Math.min(n, estCount);
+    else if (G.allowEst) {
+      e = Math.min(Math.round(n * 0.2), estCount);
+      if ((n - e) % 2) e = (e + 1 <= estCount && e + 1 <= n) ? e + 1 : Math.max(0, e - 1);
+    }
+    var m = G.allowStd ? n - e : 0;
+    var tokens = [];
+    for (var i = 0; i < e; i++) tokens.push('E');
+    for (var j = 0; j < m; j++) tokens.push('S');
+    tokens = shuffle(tokens);
+    var who = 0;
+    tokens.forEach(function (t) {
+      if (t === 'E') {
+        var qe = takeEst(); if (qe) G.queue.push({ q: qe, who: 'both', guesses: [null, null], endsRound: true });
+      } else {
+        var qs = takeStd(); if (qs) { G.queue.push({ q: qs, who: who }); who = 1 - who; }
       }
-    }, 3500);
+    });
   }
 
-  // ── Bildschirm wach halten ─────────────────────────────────────────────────
-  function requestWake() {
-    try {
-      if (!('wakeLock' in navigator)) { log('Wach-Modus nicht verfügbar'); return; }
-      if (wakeLock && !wakeLock.released) return;
-      navigator.wakeLock.request('screen').then(function (l) {
-        wakeLock = l;
-        log('Bildschirm bleibt an');
-        l.addEventListener('release', function () { log('Wach-Modus beendet'); });
-      }).catch(function (e) { log('Wach-Modus: ' + e.name); });
-    } catch (e) { log('Wach-Modus: ' + e.message); }
+  function extendTarget() {
+    G.rounds++;
+    if (G.allowEst && (!G.allowStd || Math.random() < 0.2)) {
+      var qe = takeEst();
+      if (qe) { G.queue.push({ q: qe, who: 'both', guesses: [null, null], endsRound: true }); return; }
+    }
+    var q1 = takeStd(), q2 = takeStd();
+    if (q1) G.queue.push({ q: q1, who: 0 });
+    if (q2) G.queue.push({ q: q2, who: 1, endsRound: true });
   }
 
+  function curItem() { return G.queue[G.idx]; }
+  function curWho() { var it = curItem(); return it.who === 'both' ? ui.estStep : it.who; }
+
+  function prepItem() {
+    var it = curItem();
+    ui = { phase: 'ready', estStep: it && it.step ? it.step : 0, chosen: null, hidden: [], order: null, result: null, timer: null, err: '' };
+    if (it && it.who === 'both' && !it.guesses) it.guesses = [null, null];
+  }
+
+  function startGame(st, names) {
+    newGame(st, names);
+    if (!G.queue.length) { notice = 'Mit dieser Auswahl gibt es keine Fragen.'; G = null; go('setup'); return; }
+    prepItem(); go('play');
+  }
+
+  function resumeGame() {
+    G = S.game;
+    if (!G || G.over || !G.queue || G.idx >= G.queue.length) { S.game = null; save(); G = null; go('home'); return; }
+    G.pool = makePool(G.settings);
+    view = 'play';
+    if (curItem().done) { nextItem(); window.scrollTo(0, 0); return; }
+    prepItem(); go('play');
+  }
+
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  function startTimer(ms) {
+    stopTimer();
+    ui.timer = { total: ms, endsAt: Date.now() + ms, left: ms, paused: false };
+    timerId = setInterval(tick, 100);
+  }
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+  function tick() {
+    var t = ui.timer; if (!t) return;
+    var left = Math.max(0, t.endsAt - Date.now());
+    var bar = document.getElementById('tbar'), lab = document.getElementById('tlab');
+    if (bar) { bar.style.width = (left / t.total * 100) + '%'; bar.className = 'tbar' + (left < 5000 ? ' low' : ''); }
+    if (lab) lab.textContent = Math.ceil(left / 1000);
+    if (left <= 0) { stopTimer(); onTimeout(); }
+  }
   document.addEventListener('visibilitychange', function () {
-    if (!role || left) return;
-    if (document.visibilityState === 'hidden') {
-      log('Seite im Hintergrund');
+    if (!ui.timer || ui.phase !== 'ask') return;
+    if (document.hidden) {
+      if (timerId) { ui.timer.left = Math.max(0, ui.timer.endsAt - Date.now()); ui.timer.paused = true; stopTimer(); }
+    } else if (ui.timer.paused) {
+      ui.timer.paused = false; ui.timer.endsAt = Date.now() + ui.timer.left;
+      timerId = setInterval(tick, 100);
+    }
+  });
+  function onTimeout() {
+    if (ui.phase !== 'ask') return;
+    if (curItem().q.typ === 'est') submitGuess(null); else resolveStd(null, true);
+  }
+
+  // ── Spielablauf ────────────────────────────────────────────────────────────
+  function startAsk() {
+    var q = curItem().q;
+    ui.phase = 'ask'; ui.chosen = null; ui.hidden = []; ui.err = '';
+    ui.order = q.typ === 'mc' ? shuffle([0, 1, 2, 3]) : null;
+    startTimer(TIME[q.typ] * 1000);
+    render();
+    var inp = document.getElementById('guess'); if (inp) inp.focus();
+  }
+
+  function resolveStd(choice, timeout) {
+    if (ui.phase !== 'ask') return;
+    var left = Math.max(0, ui.timer.endsAt - Date.now());
+    stopTimer();
+    var it = curItem(), q = it.q, who = it.who;
+    var correct = !timeout && choice === q.richtig;
+    var bonus = correct ? Math.round(BONUS_MAX * left / ui.timer.total) : 0;
+    var pts = correct ? POINTS + bonus : 0;
+    G.scores[who] += pts; G.stdAsked[who]++; if (correct) G.right[who]++;
+    it.done = true;
+    ui.phase = 'feedback'; ui.chosen = choice; ui.result = { correct: correct, timeout: !!timeout, pts: pts, bonus: bonus };
+    persistGame(); render();
+  }
+
+  function useFifty() {
+    var it = curItem(), q = it.q, who = it.who, J = G.jokers[who];
+    if (ui.phase !== 'ask' || q.typ !== 'mc' || J.fifty < 1 || ui.hidden.length) return;
+    var wrong = [0, 1, 2, 3].filter(function (i) { return i !== q.richtig; });
+    ui.hidden = shuffle(wrong).slice(0, 2); J.fifty--;
+    persistGame(); render();
+  }
+
+  function useSwap() {
+    var it = curItem(), who = it.who, J = G.jokers[who];
+    if (ui.phase !== 'ask' || J.swap < 1) return;
+    var nq = takeStd();
+    if (!nq) { ui.err = 'Keine weitere Frage verfügbar.'; render(); return; }
+    it.q = nq; J.swap--;
+    ui.hidden = []; ui.chosen = null; ui.err = '';
+    ui.order = nq.typ === 'mc' ? shuffle([0, 1, 2, 3]) : null;
+    startTimer(TIME[nq.typ] * 1000);
+    persistGame(); render();
+  }
+
+  function parseGuess(raw) {
+    var s = String(raw || '').trim().replace(/\s/g, '');
+    if (!s) return null;
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '');
+    s = s.replace(',', '.');
+    if (!/^-?\d+(\.\d+)?$/.test(s)) return null;
+    return Number(s);
+  }
+
+  function submitGuess(v) {
+    if (ui.phase !== 'ask') return;
+    stopTimer();
+    var it = curItem();
+    it.guesses[ui.estStep] = v;
+    if (ui.estStep === 0) { it.step = 1; ui.estStep = 1; ui.phase = 'ready'; persistGame(); render(); }
+    else revealEst();
+  }
+
+  function revealEst() {
+    var it = curItem(), q = it.q, g = it.guesses;
+    var diff = g.map(function (x) { return x === null ? Infinity : Math.abs(x - q.richtig); });
+    var best = Math.min(diff[0], diff[1]);
+    var pts = [0, 0], exact = [false, false];
+    for (var i = 0; i < 2; i++) {
+      if (isFinite(diff[i]) && diff[i] === best) { pts[i] += POINTS; G.estWins[i]++; }
+      if (isFinite(diff[i]) && diff[i] <= q.toleranz + 1e-9) { pts[i] += EXACT_BONUS; exact[i] = true; }
+      G.scores[i] += pts[i];
+    }
+    it.done = true;
+    ui.phase = 'reveal'; ui.result = { diff: diff, pts: pts, exact: exact };
+    persistGame(); render();
+  }
+
+  function nextItem() {
+    var it = curItem();
+    G.idx++;
+    if (G.settings.mode === 'count') {
+      if (G.idx >= G.queue.length) return finish();
     } else {
-      log('Seite wieder sichtbar');
-      setTimeout(function () {
-        if (left) return;
-        if (conn && conn.open) { checkAlive(); requestWake(); }
-        else if (role === 'guest') scheduleReconnect(300);
-        if (peer && peer.disconnected) { try { peer.reconnect(); } catch (e) {} }
-      }, 800);
+      if (it.endsRound) {
+        var a = G.scores[0], b = G.scores[1];
+        if ((Math.max(a, b) >= G.settings.target && a !== b) || G.rounds >= 60) return finish();
+        if (G.idx >= G.queue.length) extendTarget();
+      }
+      if (G.idx >= G.queue.length) return finish();
     }
-  });
+    prepItem(); persistGame(); render();
+  }
 
-  // ── Bedienung ──────────────────────────────────────────────────────────────
-  $('btnHost').addEventListener('click', function () {
-    if (typeof Peer === 'undefined') { $('startErr').textContent = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; return; }
-    left = false;
-    log('Raum erstellen');
-    requestWake();
-    startHost(0);
-  });
-
-  $('btnJoin').addEventListener('click', function () {
-    var c = $('joinCode').value.replace(/\D/g, '');
-    if (c.length !== 4) { $('startErr').textContent = 'Bitte den 4-stelligen Code eingeben.'; return; }
-    if (typeof Peer === 'undefined') { $('startErr').textContent = 'Die Verbindungs-Bibliothek konnte nicht geladen werden. Ist das Internet an?'; return; }
-    $('startErr').textContent = '';
-    left = false;
-    log('Beitreten mit Code ' + c);
-    requestWake();
-    startGuest(c);
-  });
-
-  $('joinCode').addEventListener('input', function () {
-    this.value = this.value.replace(/\D/g, '').slice(0, 4);
-    $('startErr').textContent = '';
-  });
-
-  $('btnHello').addEventListener('click', function () {
-    var text = 'Hallo von ' + (role === 'host' ? 'Handy 1' : 'Handy 2') + ' (' + now() + ')';
-    if (send({ type: 'hello', text: text })) addChat('Du: ' + text, true);
-    else addChat('Nicht gesendet: keine Verbindung.', true);
-  });
-
-  $('btnPing').addEventListener('click', function () {
-    if (!send({ type: 'ping', t: Date.now() })) addChat('Nicht gesendet: keine Verbindung.', true);
-  });
-
-  $('btnReconnect').addEventListener('click', function () {
-    log('Neu verbinden (manuell)');
-    rcTries = 0;
-    if (conn && conn.open) { checkAlive(); return; }
-    if (role === 'guest') { if (rcTimer) { clearTimeout(rcTimer); rcTimer = null; } doReconnect(); scheduleReconnect(3000); }
-    else doReconnect();
-  });
-
-  $('btnCopy').addEventListener('click', function () {
-    var btn = this;
-    var summary = [
-      'Vermittlung: ' + $('vSignal').textContent,
-      'Verbindung: ' + $('vLink').textContent,
-      'Weg: ' + $('vRoute').textContent,
-      'Antwortzeit: ' + $('vRtt').textContent,
-      'Wiederverbunden: ' + $('vRe').textContent,
-      'Rolle: ' + (role === 'host' ? 'Handy 1' : 'Handy 2'),
-      '',
-      logLines.join('\n')
-    ].join('\n');
-    function done(ok) {
-      btn.textContent = ok ? 'Kopiert' : 'Kopieren nicht möglich';
-      setTimeout(function () { btn.textContent = 'Protokoll kopieren'; }, 2000);
+  function bilanzKey(n) { return n.trim().toLowerCase(); }
+  function finish() {
+    stopTimer();
+    G.over = true;
+    if (!G.recorded) {
+      G.recorded = true;
+      var a = G.scores[0], b = G.scores[1], win = a > b ? 0 : (b > a ? 1 : -1);
+      for (var i = 0; i < 2; i++) {
+        var k = bilanzKey(G.names[i]);
+        var r = S.bilanz[k] || { name: G.names[i], wins: 0, games: 0 };
+        r.name = G.names[i]; r.games++; if (win === i) r.wins++;
+        S.bilanz[k] = r;
+      }
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(summary).then(function () { done(true); }, function () { done(false); });
-    } else {
-      done(false);
+    S.game = null; save();
+    view = 'result'; render();
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
+  function go(v) { view = v; render(); window.scrollTo(0, 0); }
+
+  function render() {
+    var node;
+    if (loadError && !allQuestions().length) node = viewLoadError();
+    else if (view === 'home') node = viewHome();
+    else if (view === 'setup') node = viewSetup();
+    else if (view === 'play') node = viewPlay();
+    else node = viewResult();
+    app.replaceChildren(node);
+    if (view === 'play' && ui.phase === 'ask') tick();
+  }
+
+  // ── Ansichten ──────────────────────────────────────────────────────────────
+  function header(sub) {
+    return el('div', null, el('div', { class: 'logo', text: 'Quiz-Abend' }), el('div', { class: 'sub', text: sub }));
+  }
+
+  function viewLoadError() {
+    return el('div', null, header('Fragen fehlen'),
+      el('p', { class: 'lead', text: 'Die Fragen konnten nicht geladen werden (' + loadError + '). Bitte Internet prüfen und erneut versuchen.' }),
+      el('button', { class: 'btn primary', text: 'Erneut versuchen', onclick: function () { loadError = null; boot(); } }));
+  }
+
+  function viewHome() {
+    var total = allQuestions().length;
+    var bil = Object.keys(S.bilanz).map(function (k) { return S.bilanz[k]; })
+      .sort(function (a, b) { return b.wins - a.wins || b.games - a.games; });
+    var game = S.game && !S.game.over && S.game.queue && S.game.idx < S.game.queue.length ? S.game : null;
+    return el('div', null,
+      header('Wissen für zwei'),
+      notice ? el('div', { class: 'notice', text: notice }) : null,
+      el('h1', null, 'Wer weiß ', el('strong', { text: 'mehr' }), '?'),
+      el('p', { class: 'lead', text: 'Abwechselnd Fragen beantworten, Joker nutzen, Punkte sammeln.' }),
+      game ? el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Spiel läuft' }),
+        el('div', { class: 'row' }, el('span', { class: 'k', text: game.names[0] }), el('span', { class: 'v', text: String(game.scores[0]) })),
+        el('div', { class: 'row' }, el('span', { class: 'k', text: game.names[1] }), el('span', { class: 'v', text: String(game.scores[1]) })),
+        el('div', { class: 'btnrow', style: 'margin-top:12px' },
+          el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: resumeGame }),
+          el('button', { class: 'btn small', text: 'Verwerfen', onclick: function () { if (confirm('Das laufende Spiel verwerfen?')) { S.game = null; save(); render(); } } }))) : null,
+      el('button', { class: 'btn primary', text: 'Neues Spiel', onclick: function () { notice = ''; go('setup'); } }),
+      bil.length ? el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Bilanz' }),
+        el('table', null,
+          el('tr', null, el('th', { text: 'Name' }), el('th', { class: 'num', text: 'Siege' }), el('th', { class: 'num', text: 'Spiele' })),
+          bil.map(function (r) { return el('tr', null, el('td', { text: r.name }), el('td', { class: 'num', text: String(r.wins) }), el('td', { class: 'num', text: String(r.games) })); }))) : null,
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Fragen' }),
+        el('div', { class: 'info', text: total + ' Fragen im Spiel' + (S.imported.length ? ' (davon ' + S.imported.length + ' importiert)' : '') + '.' }),
+        el('div', { class: 'btnrow' },
+          el('button', { class: 'btn small', text: 'Importieren', onclick: function () { document.getElementById('fileIn').click(); } }),
+          el('button', { class: 'btn small', text: 'Sichern', onclick: exportBackup }))),
+      el('div', { class: 'center' }, el('a', { class: 'linkbtn', href: 'verbindungstest.html', text: 'Verbindungstest' })));
+  }
+
+  function viewSetup() {
+    var st = S.settings, all = allCatKeys(), sel = selectedCats();
+    var pool = poolFor(Object.assign({}, st, { cats: sel }));
+    var n = st.n;
+    var names = S.names;
+
+    function savePlayers() {
+      S.names = [document.getElementById('p0').value, document.getElementById('p1').value]; save();
     }
+    function update(fn) { savePlayersSafe(); fn(); save(); render(); }
+    function savePlayersSafe() { var a = document.getElementById('p0'), b = document.getElementById('p1'); if (a && b) { S.names = [a.value, b.value]; } }
+
+    var canStart = pool.length >= 2 && sel.length > 0;
+    var warn = '';
+    if (!sel.length) warn = 'Bitte mindestens eine Kategorie wählen.';
+    else if (!pool.length) warn = 'Mit dieser Auswahl gibt es keine Fragen.';
+    else if (st.mode === 'count' && pool.length < n) warn = 'Nur ' + pool.length + ' passende Fragen, einige wiederholen sich.';
+
+    return el('div', null,
+      el('div', { class: 'topbar' }, header('Neues Spiel'),
+        el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { savePlayersSafe(); save(); go('home'); } })),
+      notice ? el('div', { class: 'notice', text: notice }) : null,
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Spieler' }),
+        el('input', { type: 'text', id: 'p0', placeholder: 'Spieler 1', maxlength: '16', autocomplete: 'off', value: names[0] || '', oninput: savePlayers }),
+        el('input', { type: 'text', id: 'p1', placeholder: 'Spieler 2', maxlength: '16', autocomplete: 'off', value: names[1] || '', oninput: savePlayers })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Kategorien' }),
+        el('div', { class: 'chips' }, all.map(function (k) {
+          var on = sel.indexOf(k) >= 0;
+          return el('button', { class: 'chip' + (on ? ' sel' : ''), text: catLabel(k), onclick: function () {
+            update(function () { var cur = selectedCats().slice(); var i = cur.indexOf(k); if (i >= 0) cur.splice(i, 1); else cur.push(k); st.cats = cur.length === all.length ? null : cur; });
+          } });
+        }))),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Schwierigkeit' }),
+        el('div', { class: 'chips' }, [1, 2, 3, 0].map(function (l) {
+          return el('button', { class: 'chip' + (st.level === l ? ' sel' : ''), text: LEVELS[l], onclick: function () { update(function () { st.level = l; }); } });
+        }))),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Fragetypen' }),
+        el('div', { class: 'chips' }, ['mc', 'tf', 'est'].map(function (t) {
+          return el('button', { class: 'chip' + (st.types[t] ? ' sel' : ''), text: TYPE_LABELS[t], onclick: function () {
+            update(function () { var on = Object.keys(st.types).filter(function (x) { return st.types[x]; }); if (st.types[t] && on.length === 1) return; st.types[t] = !st.types[t]; });
+          } });
+        }))),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Spielende' }),
+        el('div', { class: 'seg' },
+          el('button', { class: st.mode === 'count' ? 'sel' : '', text: 'Anzahl Fragen', onclick: function () { update(function () { st.mode = 'count'; }); } }),
+          el('button', { class: st.mode === 'target' ? 'sel' : '', text: 'Zielpunkte', onclick: function () { update(function () { st.mode = 'target'; }); } })),
+        st.mode === 'count'
+          ? el('div', { class: 'stepper' },
+              el('button', { text: '−', 'aria-label': 'Weniger Fragen', onclick: function () { update(function () { st.n = Math.max(6, st.n - 2); }); } }),
+              el('div', { class: 'val' }, String(st.n), el('span', { class: 'unit', text: 'Fragen' })),
+              el('button', { text: '+', 'aria-label': 'Mehr Fragen', onclick: function () { update(function () { st.n = Math.min(20, st.n + 2); }); } }))
+          : el('div', { class: 'stepper' },
+              el('button', { text: '−', 'aria-label': 'Weniger Punkte', onclick: function () { update(function () { st.target = Math.max(50, st.target - 50); }); } }),
+              el('div', { class: 'val' }, String(st.target), el('span', { class: 'unit', text: 'Punkte' })),
+              el('button', { text: '+', 'aria-label': 'Mehr Punkte', onclick: function () { update(function () { st.target = Math.min(300, st.target + 50); }); } })),
+        el('div', { class: 'hint', text: st.mode === 'count' ? 'Beide bekommen gleich viele Fragen.' : 'Es endet, sobald nach einer vollen Runde jemand das Ziel erreicht hat.' })),
+      el('div', { class: 'hint' + (warn ? ' warn' : ''), style: 'margin:0 0 14px', text: warn || (pool.length + ' passende Fragen') }),
+      el('button', { class: 'btn primary', text: 'Spiel starten', disabled: !canStart, onclick: function () {
+        var a = (document.getElementById('p0').value || '').trim() || 'Spieler 1';
+        var b = (document.getElementById('p1').value || '').trim() || 'Spieler 2';
+        if (bilanzKey(a) === bilanzKey(b)) { notice = 'Bitte zwei verschiedene Namen eingeben.'; render(); return; }
+        notice = ''; S.names = [a, b]; st.cats = selectedCats().length === all.length ? null : selectedCats(); save();
+        startGame(Object.assign({}, st), [a, b]);
+      } }));
+  }
+
+  function levelDots(n) { return '●'.repeat(n) + '○'.repeat(3 - n); }
+  function metaLine(q) {
+    return catLabel(q.kat) + (q.thema === 'psychologie' ? ' · Psychologie' : '') + ' · ' + levelDots(q.stufe);
+  }
+
+  function scoreBar(active) {
+    function box(i) {
+      return el('div', { class: 'pbox' + (active === i ? ' active' : '') },
+        el('div', { class: 'pname', text: G.names[i] }), el('div', { class: 'pscore', text: String(G.scores[i]) }));
+    }
+    var prog;
+    if (G.settings.mode === 'count') prog = 'Frage ' + Math.min(G.idx + 1, G.queue.length) + ' von ' + G.queue.length;
+    else {
+      var done = G.queue.slice(0, G.idx).filter(function (x) { return x.endsRound; }).length;
+      prog = 'Runde ' + (done + 1) + ' · Ziel ' + G.settings.target + ' Punkte';
+    }
+    return el('div', null,
+      el('div', { class: 'topbar' }, el('div', { class: 'logo', text: 'Quiz-Abend' }),
+        el('button', { class: 'linkbtn', text: 'Beenden', onclick: function () {
+          if (confirm('Spiel beenden? Der Stand geht verloren.')) { stopTimer(); S.game = null; save(); G = null; go('home'); }
+        } })),
+      el('div', { class: 'scorebar' }, box(0), box(1)),
+      el('div', { class: 'progress', text: prog }));
+  }
+
+  function viewPlay() {
+    var it = curItem(), q = it.q, who = curWho();
+    var active = it.who === 'both' ? (ui.phase === 'reveal' ? -1 : who) : it.who;
+    var body;
+    if (ui.phase === 'ready') body = viewReady(it, q, who);
+    else if (ui.phase === 'ask') body = viewAsk(it, q);
+    else if (ui.phase === 'feedback') body = viewFeedback(it, q);
+    else body = viewReveal(it, q);
+    return el('div', null, scoreBar(active), body);
+  }
+
+  function viewReady(it, q, who) {
+    var est = it.who === 'both';
+    var sub = est
+      ? (ui.estStep === 0 ? 'Beide schätzen. Wer näher dran liegt, bekommt die Punkte.' : 'Die Schätzung von ' + G.names[0] + ' ist gespeichert.')
+      : null;
+    return el('div', { class: 'card center', style: 'padding:26px 16px' },
+      el('div', { class: 'meta', text: metaLine(q) }),
+      el('div', { class: 'big', text: G.names[who] + ' ist dran' }),
+      sub ? el('div', { class: 'info', style: 'margin-top:10px', text: sub }) : null,
+      el('div', { class: 'info', style: 'margin:10px 0 18px', text: TYPE_LABELS[q.typ] + ' · ' + TIME[q.typ] + ' Sekunden' }),
+      el('button', { class: 'btn primary', text: 'Frage zeigen', onclick: startAsk }));
+  }
+
+  function answerList(q, locked) {
+    if (q.typ === 'mc') {
+      return el('div', { class: 'answers' }, ui.order.map(function (orig, d) {
+        var cls = 'ans';
+        if (locked) cls += orig === q.richtig ? ' ok' : (ui.chosen === orig ? ' bad' : ' dim');
+        else if (ui.hidden.indexOf(orig) >= 0) cls += ' gone';
+        return el('button', { class: cls, disabled: locked || ui.hidden.indexOf(orig) >= 0, onclick: function () { resolveStd(orig, false); } },
+          el('span', { class: 'letter', text: 'ABCD'.charAt(d) }), el('span', { text: q.antworten[orig] }));
+      }));
+    }
+    function tfBtn(val, text) {
+      var cls = 'ans tf';
+      if (locked) cls += val === q.richtig ? ' ok' : (ui.chosen === val ? ' bad' : ' dim');
+      return el('button', { class: cls, text: text, disabled: locked, onclick: function () { resolveStd(val, false); } });
+    }
+    return el('div', { class: 'answers' }, tfBtn(true, 'Wahr'), tfBtn(false, 'Falsch'));
+  }
+
+  function timerEl() {
+    return el('div', { class: 'timer' },
+      el('div', { class: 'tbar-wrap' }, el('div', { class: 'tbar', id: 'tbar' })),
+      el('div', { class: 'tlab', id: 'tlab', text: '' }));
+  }
+
+  function viewAsk(it, q) {
+    var who = curWho();
+    var card = el('div', { class: 'card' },
+      el('div', { class: 'meta', text: metaLine(q) }),
+      timerEl(),
+      el('div', { class: 'qtext', text: q.frage }));
+    if (q.typ === 'est') {
+      var inp = el('input', { type: 'text', id: 'guess', class: 'big', inputmode: 'decimal', autocomplete: 'off',
+        placeholder: q.einheit ? 'Zahl in ' + q.einheit : 'Zahl', onkeydown: function (e) { if (e.key === 'Enter') doSubmit(); } });
+      var err = el('div', { class: 'errtext', id: 'guessErr', text: ui.err || '' });
+      var doSubmit = function () {
+        var v = parseGuess(inp.value);
+        if (v === null) { err.textContent = 'Bitte eine Zahl eingeben.'; return; }
+        submitGuess(v);
+      };
+      inp.addEventListener('input', function () { err.textContent = ''; });
+      card.append(inp, err, el('button', { class: 'btn primary', text: 'Schätzung abgeben', onclick: doSubmit }));
+      return card;
+    }
+    card.append(answerList(q, false));
+    var J = G.jokers[who];
+    card.append(el('div', { class: 'jokers' },
+      el('button', { class: 'btn small', text: '50:50 (' + J.fifty + ')', disabled: J.fifty < 1 || q.typ !== 'mc' || ui.hidden.length > 0, onclick: useFifty }),
+      el('button', { class: 'btn small', text: 'Tauschen (' + J.swap + ')', disabled: J.swap < 1, onclick: useSwap })));
+    if (ui.err) card.append(el('div', { class: 'errtext', text: ui.err }));
+    return card;
+  }
+
+  function viewFeedback(it, q) {
+    var r = ui.result;
+    var head = r.timeout ? 'Zeit abgelaufen' : (r.correct ? 'Richtig!' : 'Leider falsch');
+    var sub = r.correct ? '+' + r.pts + ' Punkte' + (r.bonus ? ' (davon ' + r.bonus + ' Zeitbonus)' : '') : '0 Punkte';
+    return el('div', null,
+      el('div', { class: 'card' },
+        el('div', { class: 'meta', text: metaLine(q) }),
+        el('div', { class: 'qtext', text: q.frage }),
+        answerList(q, true),
+        el('div', { class: 'banner ' + (r.correct ? 'good' : 'miss') }, head, el('small', { text: sub })),
+        q.info ? el('div', { class: 'info', text: q.info }) : null),
+      el('button', { class: 'btn primary', text: 'Weiter', onclick: nextItem }));
+  }
+
+  function fmt(n) { return String(Math.round(n * 1000) / 1000).replace('.', ','); }
+
+  function viewReveal(it, q) {
+    var r = ui.result;
+    function line(i) {
+      var g = it.guesses[i];
+      var txt = g === null ? 'keine Antwort' : fmt(g) + (q.einheit ? ' ' + q.einheit : '');
+      var extra = g === null ? '' : ' (' + (r.diff[i] === 0 ? 'genau richtig' : 'Abstand ' + fmt(r.diff[i])) + ')';
+      return el('div', { class: 'row' },
+        el('span', { class: 'k', text: G.names[i] }),
+        el('span', { class: 'v', text: txt + extra + ' · +' + r.pts[i] }));
+    }
+    return el('div', null,
+      el('div', { class: 'card' },
+        el('div', { class: 'meta', text: metaLine(q) }),
+        el('div', { class: 'qtext', text: q.frage }),
+        el('div', { class: 'banner good' }, 'Richtig: ' + fmt(q.richtig) + (q.einheit ? ' ' + q.einheit : '')),
+        line(0), line(1),
+        q.info ? el('div', { class: 'info', style: 'margin-top:12px', text: q.info }) : null),
+      el('button', { class: 'btn primary', text: 'Weiter', onclick: nextItem }));
+  }
+
+  function viewResult() {
+    var a = G.scores[0], b = G.scores[1];
+    var win = a > b ? 0 : (b > a ? 1 : -1);
+    function stat(i) {
+      return el('div', { class: 'row' }, el('span', { class: 'k', text: G.names[i] }),
+        el('span', { class: 'v', text: G.scores[i] + ' Punkte · ' + G.right[i] + ' von ' + G.stdAsked[i] + ' richtig' }));
+    }
+    return el('div', null,
+      header('Ergebnis'),
+      el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: win < 0 ? 'Unentschieden' : 'Sieger' }),
+        el('div', { class: 'big', text: win < 0 ? 'Gleichstand bei ' + a + ' Punkten' : G.names[win] + ' gewinnt!' })),
+      el('div', { class: 'card' }, el('div', { class: 'label', text: 'Endstand' }), stat(0), stat(1),
+        (G.estWins[0] || G.estWins[1]) ? el('div', { class: 'hint', text: 'Schätzfragen näher dran: ' + G.names[0] + ' ' + G.estWins[0] + ', ' + G.names[1] + ' ' + G.estWins[1] }) : null),
+      el('button', { class: 'btn primary', text: 'Revanche', onclick: function () { var st = G.settings, nm = G.names; startGame(st, nm); } }),
+      el('button', { class: 'btn', text: 'Neues Spiel', onclick: function () { G = null; go('setup'); } }),
+      el('button', { class: 'btn ghost', text: 'Zum Start', onclick: function () { G = null; go('home'); } }));
+  }
+
+  // ── Import und Sicherung ───────────────────────────────────────────────────
+  document.getElementById('fileIn').addEventListener('change', function () {
+    var f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var d = JSON.parse(rd.result);
+        var list = Array.isArray(d) ? d : (d && Array.isArray(d.fragen) ? d.fragen : null);
+        if (!list && !(d && d.bilanz)) throw new Error('Format');
+        var ids = {}; allQuestions().forEach(function (q) { ids[q.id] = 1; });
+        var added = 0, skipped = 0, dup = 0;
+        (list || []).forEach(function (raw) {
+          var q = cleanQ(raw);
+          if (!q) { skipped++; return; }
+          if (ids[q.id]) { dup++; return; }
+          ids[q.id] = 1; S.imported.push(q); added++;
+        });
+        if (d && d.kategorien && typeof d.kategorien === 'object') {
+          Object.keys(d.kategorien).forEach(function (k) { if (!base.kategorien[k]) S.catLabels[k] = String(d.kategorien[k]); });
+        }
+        var bil = 0;
+        if (d && d.bilanz && typeof d.bilanz === 'object') {
+          Object.keys(d.bilanz).forEach(function (k) {
+            var r = d.bilanz[k];
+            if (r && typeof r.games === 'number' && typeof r.wins === 'number' && (!S.bilanz[k] || r.games > S.bilanz[k].games)) { S.bilanz[k] = { name: String(r.name || k), wins: r.wins, games: r.games }; bil++; }
+          });
+        }
+        save();
+        var parts = [added + ' neue Fragen importiert'];
+        if (dup) parts.push(dup + ' schon vorhanden');
+        if (skipped) parts.push(skipped + ' ungültig');
+        if (bil) parts.push('Bilanz übernommen');
+        notice = parts.join(', ') + '.';
+      } catch (e) {
+        notice = 'Die Datei konnte nicht gelesen werden.';
+      }
+      go('home');
+    };
+    rd.readAsText(f);
   });
 
-  $('btnLeave').addEventListener('click', function () {
-    left = true;
-    stopHeartbeat();
-    if (rcTimer) { clearTimeout(rcTimer); rcTimer = null; }
-    try { if (conn) conn.close(); } catch (e) {}
-    try { if (peer) peer.destroy(); } catch (e) {}
-    try { if (wakeLock) wakeLock.release(); } catch (e) {}
-    peer = null; conn = null; role = null; everConnected = false; reconnects = 0; rtts = [];
-    $('vRe').textContent = '0×'; $('dRe').className = 'dot';
-    setRow('Rtt', '–', ''); setRow('Route', '–', '');
-    $('chat').innerHTML = '<div class="empty">Noch nichts empfangen.</div>';
-    show('start');
-  });
+  function exportBackup() {
+    var data = { version: 1, name: 'Quiz-Abend Sicherung', exported: new Date().toISOString(), kategorien: S.catLabels, fragen: S.imported, bilanz: S.bilanz };
+    var json = JSON.stringify(data, null, 2);
+    var fname = 'quiz-abend-sicherung.json';
+    try {
+      var file = new File([json], fname, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file] }).catch(function () {});
+        return;
+      }
+    } catch (e) {}
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
 
-  window.addEventListener('error', function (e) { log('Skriptfehler: ' + e.message); });
-  log('Seite geladen');
+  // ── Start ──────────────────────────────────────────────────────────────────
+  function boot() { loadBase().then(function () { render(); }); }
+  boot();
 })();
 </script>
 </body>
