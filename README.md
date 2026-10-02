@@ -40,6 +40,16 @@ Fragen über euch beide, ohne Zeitdruck. Start: „Paarabend – zwei Handys“,
 - Es zählt immer die Fragenliste von Handy 1. Der Paarabend fließt nicht in die Bilanz des Wissensspiels ein.
 - Eigene Paarfragen („Eigene Paarfragen“ auf dem Startbildschirm): Freitext oder Auswahl, mit Stufe. Sie bleiben nur lokal auf dem Handy und werden nicht ins Repo geschrieben. Import ebenfalls über „Importieren“ (JSON mit `paarfragen`-Liste im Format von `paarfragen.json`), Die Sicherung enthält sie ebenfalls.
 
+## Pause und Fortsetzen
+
+Gilt für den Paarabend und das Zwei-Handy-Spiel, zum Beispiel wenn ein Kind aufwacht.
+
+- Oben rechts „Beenden“ tippen → „Pause machen“. Beide Handys landen auf dem Startbildschirm, der Stand bleibt gespeichert (auch beim Schließen der App). Es spielt keine Rolle, wer die Pause macht.
+- Weitermachen: Zuerst tippt Handy 1 auf der Startseite bei der Karte „… pausiert“ auf „Fortsetzen“. Danach tippt Handy 2 bei seiner Karte auf „Fortsetzen“ und verbindet sich automatisch. Ihr landet genau in der Frage, in der ihr aufgehört habt, bereits gegebene Antworten bleiben erhalten.
+- Tippt Handy 2 zu früh, sucht es einfach weiter, bis Handy 1 den Raum geöffnet hat (nach rund 75 Sekunden ggf. noch einmal „Fortsetzen“ tippen).
+- „Verwerfen“ an der Karte löscht den pausierten Abend auf dem jeweiligen Handy. „Spiel beenden“ im Pause-Dialog beendet den Abend ohne Pause. Wer einen neuen Raum erstellt, während ein Abend pausiert ist, wird vorher gefragt.
+- In der Wartehalle und am Ende gibt es keinen Pause-Dialog, dort reicht „Raum schließen“ / „Verlassen“ bzw. „Zum Start“.
+
 ## Eigene Wissensfragen
 
 Über „Importieren“ auf dem Startbildschirm lassen sich weitere Fragen als JSON-Datei laden. Sie bleiben nur lokal im Browser des Handys gespeichert (nicht im öffentlichen Repo). Im Zwei-Handy-Modus zählen die Fragen von Handy 1. Format wie in `fragen.json`. Eine Sicherung (siehe unten) lässt sich auf demselben Weg wieder einspielen.
