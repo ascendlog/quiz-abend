@@ -206,6 +206,23 @@
   .own .t { flex: 1; }
   .own .m { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-top: 2px; }
   .own button { background: none; border: none; color: var(--red); font-size: 13px; padding: 6px 4px; cursor: pointer; }
+  .prow { padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+  .prow:first-of-type { padding-top: 0; }
+  .prow:last-of-type { border-bottom: none; }
+  .prow-top { display: flex; gap: 8px; align-items: flex-start; }
+  .prow-top input { margin-bottom: 8px; }
+  .xbtn { flex: 0 0 46px; height: 48px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--white); font-size: 22px; line-height: 1; color: var(--ink-soft); cursor: pointer; }
+  .seg.small button { padding: 10px 2px; font-size: 13px; }
+  .sboard { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .sboard .pbox { flex: 1 1 28%; min-width: 92px; }
+  .fstars { background: var(--white); border: 1.5px solid var(--ink); border-radius: var(--radius); padding: 8px 12px; text-align: center; margin-bottom: 8px; }
+  .fstars .fn { font-size: 34px; font-weight: 300; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .fstars .star { color: var(--accent); }
+  .fstars .fl { font-size: 12px; color: var(--ink-soft); }
+  .fbild { font-size: 64px; text-align: center; line-height: 1.25; margin: 4px 0 10px; }
+  .qtext.fq { font-size: 22px; }
+  .answers.fam .ans { font-size: 18px; min-height: 64px; }
+  .speakrow { display: flex; justify-content: flex-end; margin: -4px 0 6px; }
   .trophy { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
 </style>
 </head>
@@ -227,6 +244,15 @@
   var DEFAULTS = { cats: null, level: 0, types: { mc: true, tf: true, est: true }, mode: 'count', n: 10, target: 100 };
   var PDEFAULTS = { pmode: 'kennt', level: 1, n: 10, wertung: 'gegen', vorschlag: true, eigen: true };
   var PBASE_KEY = 'quiz_abend_pbase_v1';
+  var FBASE_KEY = 'quiz_abend_fbase_v1';
+  var FAGE = { k: 'Klein', m: 'Mittel', g: 'Groß', e: 'Erwachsen' };
+  var FSTUFE = { k: 1, m: 2, g: 3, e: 3 };
+  var FWEIGHTS = {
+    k: { mc: 0.5, tf: 0.1, tat: 0.25, fam: 0.15 }, m: { mc: 0.5, tf: 0.15, tat: 0.2, fam: 0.15 },
+    g: { mc: 0.55, tf: 0.15, tat: 0.15, fam: 0.15 }, e: { mc: 0.5, tf: 0.1, tat: 0.2, fam: 0.2 }
+  };
+  var FKIDS_KAT = ['geografie', 'natur', 'sport', 'kultur'];
+  var FDEFAULT = { players: [], mode: 'gemeinsam', rounds: 3, teams: false, read: 'auto' };
 
   // ── Hilfsfunktionen ────────────────────────────────────────────────────────
   var app = document.getElementById('app');
@@ -280,8 +306,21 @@
       lastCode: typeof s.lastCode === 'string' ? s.lastCode : '',
       live: s.live && s.live.L ? s.live : null,
       settings: Object.assign({}, DEFAULTS, st, { types: Object.assign({}, DEFAULTS.types, st.types || {}) }),
-      game: s.game || null
+      game: s.game || null,
+      fam: normFam(s.fam),
+      fseen: Array.isArray(s.fseen) ? s.fseen : [],
+      fgame: s.fgame && Array.isArray(s.fgame.players) && s.fgame.cur ? s.fgame : null
     };
+  }
+  function normFam(f) {
+    f = f && typeof f === 'object' ? f : {};
+    var pl = Array.isArray(f.players) ? f.players.slice(0, 6).map(function (p) {
+      p = p || {};
+      return { name: cleanName(p.name), age: FAGE[p.age] ? p.age : 'm', team: [0, 1, 2, 3].indexOf(Number(p.team)) >= 0 ? Number(p.team) : 0 };
+    }) : [];
+    while (pl.length < 2) pl.push({ name: '', age: pl.length ? 'm' : 'e', team: 0 });
+    return { players: pl, mode: f.mode === 'reihum' ? 'reihum' : 'gemeinsam', rounds: Math.min(8, Math.max(1, Math.round(Number(f.rounds)) || 3)),
+             teams: !!f.teams, read: ['auto', 'knopf', 'aus'].indexOf(f.read) >= 0 ? f.read : 'auto' };
   }
   var S = loadStore();
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }
@@ -292,7 +331,7 @@
   }
 
   // ── Fragen ─────────────────────────────────────────────────────────────────
-  var base = { kategorien: {}, fragen: [], paar: [] };
+  var base = { kategorien: {}, fragen: [], paar: [], fam: [], famKat: {} };
   var loadError = null;
 
   function cleanQ(q) {
@@ -332,8 +371,24 @@
     });
   }
 
+  function loadFam() {
+    return fetch('familienfragen.json', { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (d) {
+      if (!d || !Array.isArray(d.fragen)) throw new Error('Format');
+      base.fam = d.fragen.map(cleanFQ).filter(Boolean); base.famKat = d.kategorien || {};
+      try { localStorage.setItem(FBASE_KEY, JSON.stringify({ kat: base.famKat, fragen: base.fam })); } catch (e) {}
+    }).catch(function () {
+      try {
+        var c = JSON.parse(localStorage.getItem(FBASE_KEY) || 'null');
+        if (c && Array.isArray(c.fragen)) { base.fam = c.fragen; base.famKat = c.kat || {}; }
+      } catch (x) {}
+    });
+  }
+
   function loadBase() {
-    return loadWissen().then(loadPaar);
+    return loadWissen().then(loadPaar).then(loadFam);
   }
 
   function loadWissen() {
@@ -342,12 +397,12 @@
       return r.json();
     }).then(function (d) {
       if (!d || !Array.isArray(d.fragen)) throw new Error('Format');
-      base = { kategorien: d.kategorien || {}, fragen: d.fragen.map(cleanQ).filter(Boolean), paar: base.paar || [] };
+      base = { kategorien: d.kategorien || {}, fragen: d.fragen.map(cleanQ).filter(Boolean), paar: base.paar || [], fam: base.fam || [], famKat: base.famKat || {} };
       try { localStorage.setItem(BASE_KEY, JSON.stringify(base)); } catch (e) {}
     }).catch(function (e) {
       try {
         var c = JSON.parse(localStorage.getItem(BASE_KEY) || 'null');
-        if (c && Array.isArray(c.fragen) && c.fragen.length) { base = { kategorien: c.kategorien || {}, fragen: c.fragen, paar: base.paar || [] }; return; }
+        if (c && Array.isArray(c.fragen) && c.fragen.length) { base = { kategorien: c.kategorien || {}, fragen: c.fragen, paar: base.paar || [], fam: base.fam || [], famKat: base.famKat || {} }; return; }
       } catch (x) {}
       loadError = e && e.message ? e.message : 'Fehler';
     });
@@ -641,6 +696,10 @@
     else if (view === 'psetup') node = viewPSetup();
     else if (view === 'pmanage') node = viewPManage();
     else if (view === 'backup') node = viewBackup();
+    else if (view === 'fsetup') node = viewFSetup();
+    else if (view === 'fplay' && FG && FG.cur) node = viewFPlay();
+    else if (view === 'fresult' && FG) node = viewFResult();
+    else if (view === 'fplay' || view === 'fresult') node = viewHome();
     else if (view === 'play') node = viewPlay();
     else node = viewResult();
     app.replaceChildren(node);
@@ -687,6 +746,13 @@
         el('div', { class: 'btnrow', style: 'margin-top:12px' },
           el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: function () { var c = S.gpause && S.gpause.code; if (c) { notice = ''; joinRoom(c); } } }),
           el('button', { class: 'btn small', text: 'Verwerfen', onclick: function () { if (confirm('Den pausierten Abend verwerfen?')) { S.gpause = null; save(); render(); } } }))) : null,
+      S.fgame ? el('div', { class: 'card', id: 'cardFam' },
+        el('div', { class: 'label', text: 'Familienrunde läuft' }),
+        el('div', { class: 'row' }, el('span', { class: 'k', text: S.fgame.players.map(function (p) { return p.name; }).join(', ') }),
+          el('span', { class: 'v', text: 'Frage ' + Math.min(S.fgame.turn + 1, S.fgame.total) + ' von ' + S.fgame.total })),
+        el('div', { class: 'btnrow', style: 'margin-top:12px' },
+          el('button', { class: 'btn primary small', text: 'Fortsetzen', onclick: fResume }),
+          el('button', { class: 'btn small', text: 'Verwerfen', onclick: function () { if (confirm('Die laufende Familienrunde verwerfen?')) { S.fgame = null; save(); render(); } } }))) : null,
       game ? el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Spiel läuft' }),
         el('div', { class: 'row' }, el('span', { class: 'k', text: game.names[0] }), el('span', { class: 'v', text: String(game.scores[0]) })),
@@ -704,6 +770,10 @@
         el('div', { class: 'info', text: 'Fragen über euch beide: Wie gut kennt ihr euch, wie ähnlich seid ihr? Drei Tiefenstufen, jede Frage lässt sich überspringen.' }),
         el('button', { class: 'btn primary', style: 'margin-bottom:4px', text: 'Paarabend – zwei Handys', onclick: function () { notice = ''; lkind = 'paar'; go('lmenu'); } }),
         el('div', { class: 'center' }, el('button', { class: 'linkbtn', text: 'Eigene Paarfragen (' + S.pq.length + ')', onclick: function () { notice = ''; pBack = 'home'; go('pmanage'); } }))),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Familienrunde' }),
+        el('div', { class: 'info', text: 'Quiz für die ganze Familie auf einem Handy. Fragen passend zum Alter, auf Wunsch vorgelesen. Gemeinsam Sterne sammeln oder reihum Punkte.' }),
+        el('button', { class: 'btn primary', style: 'margin-bottom:0', text: 'Familienrunde starten', onclick: function () { notice = ''; go('fsetup'); } })),
       bil.length ? el('div', { class: 'card' },
         el('div', { class: 'label', text: 'Bilanz' }),
         el('table', null,
@@ -997,7 +1067,11 @@
       if (d && !Array.isArray(d) && Number(d.version) >= 2) {
         if (Array.isArray(d.names) && !S.names[0] && !S.names[1] && (d.names[0] || d.names[1])) { S.names = [cleanName(d.names[0]), cleanName(d.names[1])]; extra = true; }
         if (typeof d.myName === 'string' && !S.myName && cleanName(d.myName)) { S.myName = cleanName(d.myName); extra = true; }
-        [['seen', 'seen'], ['pseen', 'pseen']].forEach(function (p) {
+        if (d.familie && typeof d.familie === 'object' && !S.fam.players.some(function (p) { return cleanName(p.name); })) {
+          var nf = normFam(d.familie);
+          if (nf.players.some(function (p) { return p.name; })) { S.fam = nf; extra = true; }
+        }
+        [['seen', 'seen'], ['pseen', 'pseen'], ['fseen', 'fseen']].forEach(function (p) {
           if (!Array.isArray(d[p[0]])) return;
           d[p[0]].forEach(function (id) { if (typeof id === 'string' && S[p[1]].indexOf(id) < 0 && S[p[1]].length < 600) S[p[1]].push(id); });
         });
@@ -1032,7 +1106,8 @@
     return JSON.stringify({
       version: 2, name: 'Quiz-Abend Sicherung', exported: new Date().toISOString(),
       kategorien: S.catLabels, fragen: S.imported, paarfragen: S.pq, bilanz: S.bilanz,
-      names: S.names, myName: S.myName, seen: S.seen.slice(-400), pseen: S.pseen.slice(-400)
+      names: S.names, myName: S.myName, seen: S.seen.slice(-400), pseen: S.pseen.slice(-400),
+      familie: S.fam, fseen: S.fseen.slice(-300)
     }, null, 2);
   }
 
@@ -1092,7 +1167,8 @@
 
   function viewBackup() {
     var nb = Object.keys(S.bilanz).length;
-    var inhalt = S.imported.length + ' eigene Wissensfragen · ' + S.pq.length + ' eigene Paarfragen · ' + (nb ? 'Bilanz (' + nb + (nb === 1 ? ' Person' : ' Personen') + ')' : 'keine Bilanz');
+    var nfam = S.fam.players.filter(function (p) { return p.name; }).length;
+    var inhalt = S.imported.length + ' eigene Wissensfragen · ' + S.pq.length + ' eigene Paarfragen · ' + (nb ? 'Bilanz (' + nb + (nb === 1 ? ' Person' : ' Personen') + ')' : 'keine Bilanz') + (nfam ? ' · Familienrunde (' + nfam + ' Personen)' : '');
     var ta = el('textarea', { id: 'bk-paste', rows: '4', placeholder: 'Kopierte Sicherung hier einfügen …' });
     return el('div', null,
       el('div', { class: 'topbar' }, header('Sicherung'), el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { notice = ''; go('home'); } })),
@@ -2649,6 +2725,412 @@
 
 
   // ── Start ──────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Familienrunde: ein Handy, 2 bis 6 Personen, Fragen nach Altersstufe
+  // ═══════════════════════════════════════════════════════════════════════════
+  var FG = null;   // laufende Familienrunde
+  var speechOK = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance === 'function';
+  var FTYP = { mc: '', tf: 'Wahr oder falsch', tat: 'Mitmachen', fam: 'Familienfrage' };
+
+  function cleanFQ(q) {
+    if (!q || typeof q !== 'object') return null;
+    var id = String(q.id || '').trim(), frage = String(q.frage || '').trim(), kat = String(q.kat || '').trim();
+    var stufe = Number(q.stufe), typ = q.typ;
+    if (!id || !frage || [1, 2, 3].indexOf(stufe) < 0 || ['mc', 'tf', 'tat', 'fam'].indexOf(typ) < 0) return null;
+    var out = { id: id, kat: kat, stufe: stufe, typ: typ, frage: frage };
+    if (q.bild) out.bild = String(q.bild);
+    if (q.info) out.info = String(q.info);
+    if (typ === 'mc') {
+      if (!Array.isArray(q.antworten) || q.antworten.length < 2 || q.antworten.length > 4) return null;
+      var r = Number(q.richtig);
+      if (!Number.isInteger(r) || r < 0 || r >= q.antworten.length) return null;
+      out.antworten = q.antworten.map(String); out.richtig = r;
+    } else if (typ === 'tf') {
+      if (typeof q.richtig !== 'boolean') return null;
+      out.richtig = q.richtig;
+    } else if (typ === 'fam') {
+      if (q.ziel === 'erw' || q.ziel === 'kind') out.ziel = q.ziel;
+    }
+    return out;
+  }
+
+  // ── Sprachausgabe ──────────────────────────────────────────────────────────
+  function plainSpeech(t) {
+    return String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{FE0F}\u{200D}]/gu, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function speak(text) {
+    if (!speechOK) return;
+    try {
+      var syn = window.speechSynthesis; syn.cancel();
+      var u = new window.SpeechSynthesisUtterance(plainSpeech(text));
+      u.lang = 'de-DE'; u.rate = 0.92;
+      var vs = (syn.getVoices ? syn.getVoices() : []).filter(function (v) { return /^de/i.test(v.lang); });
+      if (vs.length) u.voice = vs.filter(function (v) { return /de[-_]DE/i.test(v.lang); })[0] || vs[0];
+      syn.speak(u);
+    } catch (e) {}
+  }
+  function stopSpeak() { try { if (speechOK) window.speechSynthesis.cancel(); } catch (e) {} }
+  function fRelease() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && view === 'fplay' && FG) requestWake();
+  });
+
+  // ── Fragen auswählen ───────────────────────────────────────────────────────
+  function famKatLabel(k) { return (base.famKat && base.famKat[k]) || k; }
+  function fGen(n) { return /[sßxz]$/i.test(n) ? n + '’' : n + 's'; }
+
+  function fItems(age) {
+    var s = FSTUFE[age], out = [];
+    (base.fam || []).forEach(function (q) {
+      if (q.stufe === s) out.push(Object.assign({}, q, { kat: famKatLabel(q.kat) }));
+    });
+    if (age === 'g' || age === 'e') {
+      allQuestions().forEach(function (q) {
+        if ((q.typ !== 'mc' && q.typ !== 'tf') || q.thema === 'psychologie') return;
+        if (age === 'g' ? (q.stufe === 1 && FKIDS_KAT.indexOf(q.kat) >= 0) : q.stufe <= 2) {
+          var it = { id: q.id, typ: q.typ, frage: q.frage, kat: catLabel(q.kat), stufe: q.stufe, richtig: q.richtig };
+          if (q.typ === 'mc') it.antworten = q.antworten;
+          if (q.info) it.info = q.info;
+          out.push(it);
+        }
+      });
+    }
+    return out;
+  }
+
+  function fPick(p) {
+    var items = fItems(p.age), seen = {}, used = {}, byTyp = { mc: [], tf: [], tat: [], fam: [] };
+    S.fseen.forEach(function (id) { seen[id] = 1; });
+    FG.used.forEach(function (id) { used[id] = 1; });
+    items.forEach(function (q) { if (byTyp[q.typ]) byTyp[q.typ].push(q); });
+    var w = FWEIGHTS[p.age];
+    var types = Object.keys(w).filter(function (t) { return byTyp[t].length; });
+    if (!types.length) return null;
+    var tot = 0, ws = types.map(function (t) { var x = w[t] * (t === FG.lastTyp ? 0.35 : 1); tot += x; return x; });
+    var r = Math.random() * tot, t = types[types.length - 1];
+    for (var i = 0; i < types.length; i++) { r -= ws[i]; if (r <= 0) { t = types[i]; break; } }
+    var cand = byTyp[t];
+    var fresh = cand.filter(function (q) { return !used[q.id] && !seen[q.id]; });
+    if (!fresh.length) fresh = cand.filter(function (q) { return !used[q.id]; });
+    if (!fresh.length) fresh = cand;
+    var q = fresh[Math.floor(Math.random() * fresh.length)];
+    FG.lastTyp = t; FG.used.push(q.id);
+    if (S.fseen.indexOf(q.id) < 0) S.fseen.push(q.id);
+    if (S.fseen.length > 800) S.fseen = S.fseen.slice(-600);
+    return q;
+  }
+
+  function fPickE(pi, ziel) {
+    var others = FG.players.map(function (p, i) { return { p: p, i: i }; }).filter(function (x) { return x.i !== pi; });
+    var pref = others.filter(function (x) { return ziel === 'erw' ? x.p.age === 'e' : (ziel === 'kind' ? x.p.age !== 'e' : true); });
+    var pool = pref.length ? pref : others;
+    return pool[Math.floor(Math.random() * pool.length)].p.name;
+  }
+
+  function fDraw(phase) {
+    var pi = FG.turn % FG.players.length, p = FG.players[pi];
+    var it = fPick(p) || { id: 'f-fallback', typ: 'tat', frage: 'Nenne drei Tiere.', kat: 'Mitmachen' };
+    var E = it.typ === 'fam' ? fPickE(pi, it.ziel) : '';
+    if (E) it = Object.assign({}, it, { frage: it.frage.replace(/\{Es\}/g, fGen(E)).replace(/\{E\}/g, E) });
+    FG.cur = { pi: pi, it: it, E: E, phase: phase || 'ready', chosen: null, ok: null,
+               order: it.typ === 'mc' ? shuffle(it.antworten.map(function (a, i) { return i; })) : [] };
+  }
+
+  function fPersist() { if (FG) { S.fgame = clone(FG); save(); } }
+
+  function fStart() {
+    var f = S.fam;
+    var pl = f.players.map(function (p) {
+      return { name: cleanName(p.name), age: p.age, team: f.mode === 'reihum' && f.teams ? p.team : 0 };
+    }).filter(function (p) { return p.name; });
+    if (pl.length < 2) return;
+    var zero = function () { return pl.map(function () { return 0; }); };
+    FG = { id: newGid(), players: pl, mode: f.mode, rounds: f.rounds, read: f.read, total: pl.length * f.rounds,
+           turn: 0, scores: zero(), asked: zero(), right: zero(), stars: 0, used: [], lastTyp: '', cur: null, over: false };
+    fDraw(); fPersist(); requestWake(); go('fplay');
+  }
+
+  function fResume() {
+    if (!S.fgame || !S.fgame.cur) return;
+    FG = clone(S.fgame); notice = ''; requestWake(); go('fplay');
+  }
+
+  // ── Spielablauf ────────────────────────────────────────────────────────────
+  function fAuto() {
+    var p = FG.players[FG.cur.pi];
+    return speechOK && FG.read === 'auto' && (p.age === 'k' || p.age === 'm');
+  }
+  function fQSpeech() {
+    var c = FG.cur, it = c.it, t = it.frage;
+    if (it.typ === 'mc') t += ' ' + c.order.map(function (o, d) { return 'Antwort ' + 'ABCD'.charAt(d) + ': ' + it.antworten[o] + '.'; }).join(' ');
+    else if (it.typ === 'tf') t += ' Wahr oder falsch?';
+    else if (it.typ === 'fam') t += ' ' + c.E + ' sagt, ob es stimmt.';
+    return t;
+  }
+  function fRightText(it) { return it.typ === 'mc' ? it.antworten[it.richtig] : (it.richtig ? 'Wahr' : 'Falsch'); }
+  function fFbSpeech() {
+    var c = FG.cur, it = c.it, t;
+    if (it.typ === 'tat') t = c.ok ? 'Geschafft! Super.' : 'Nächstes Mal klappt es.';
+    else if (it.typ === 'fam') t = c.ok ? 'Stimmt!' : 'Stimmt nicht.';
+    else t = c.ok ? 'Richtig!' : 'Nicht ganz. Richtig ist: ' + fRightText(it) + '.';
+    if (it.info) t += ' ' + it.info;
+    return t;
+  }
+
+  function fShow() {
+    if (!FG || FG.cur.phase !== 'ready') return;
+    FG.cur.phase = 'ask'; fPersist(); render(); window.scrollTo(0, 0);
+    if (fAuto()) speak(fQSpeech());
+  }
+
+  function fAnswer(choice) {
+    var c = FG && FG.cur; if (!c || c.phase !== 'ask') return;
+    var it = c.it;
+    var ok = (it.typ === 'mc' || it.typ === 'tf') ? choice === it.richtig : !!choice;
+    c.chosen = choice; c.ok = ok; c.phase = 'fb';
+    FG.asked[c.pi]++;
+    if (ok) { FG.right[c.pi]++; FG.scores[c.pi]++; FG.stars++; }
+    fPersist(); render(); window.scrollTo(0, 0);
+    if (fAuto()) speak(fFbSpeech());
+  }
+
+  function fSkip() {
+    var c = FG && FG.cur; if (!c || c.phase === 'fb') return;
+    var ph = c.phase; stopSpeak();
+    fDraw(ph); fPersist(); render();
+    if (ph === 'ask' && fAuto()) speak(fQSpeech());
+  }
+
+  function fNext() {
+    if (!FG || FG.cur.phase !== 'fb') return;
+    stopSpeak();
+    FG.turn++;
+    if (FG.turn >= FG.total) {
+      FG.over = true; S.fgame = null; save(); fRelease(); go('fresult'); return;
+    }
+    fDraw(); fPersist(); render(); window.scrollTo(0, 0);
+  }
+
+  function fExit(paused) {
+    stopSpeak(); fRelease();
+    notice = paused ? 'Pause gemacht. Hier könnt ihr die Familienrunde fortsetzen.' : '';
+    FG = null; go('home');
+  }
+  function fLeaveAsk() {
+    choose('Familienrunde unterbrechen?', 'Bei einer Pause bleibt der Stand gespeichert. Ihr macht später genau hier weiter.', [
+      { label: 'Pause machen', primary: true, fn: function () { fPersist(); fExit(true); } },
+      { label: 'Beenden (Stand geht verloren)', fn: function () { S.fgame = null; save(); fExit(false); } },
+      { label: 'Weiterspielen', ghost: true }
+    ]);
+  }
+
+  // ── Ansichten ──────────────────────────────────────────────────────────────
+  function fEntities() {
+    var map = {}, list = [];
+    FG.players.forEach(function (p, i) {
+      var key = FG.mode === 'reihum' && p.team ? 'T' + p.team : 'P' + i;
+      if (!map[key]) { map[key] = { key: key, names: [], score: 0, idx: [] }; list.push(map[key]); }
+      map[key].names.push(p.name); map[key].score += FG.scores[i]; map[key].idx.push(i);
+    });
+    list.forEach(function (e) { e.label = e.names.join(' + '); });
+    return list;
+  }
+
+  function fScoreArea() {
+    var c = FG.cur, n = FG.players.length;
+    var prog = 'Frage ' + Math.min(FG.turn + 1, FG.total) + ' von ' + FG.total + ' · Runde ' + (Math.floor(FG.turn / n) + 1) + ' von ' + FG.rounds;
+    var board;
+    if (FG.mode === 'gemeinsam') {
+      board = el('div', { class: 'fstars', id: 'fstars' },
+        el('div', { class: 'fn' }, el('span', { class: 'star', text: '★' }), ' ' + FG.stars),
+        el('div', { class: 'fl', text: 'Sterne für die Familie' }));
+    } else {
+      board = el('div', { class: 'sboard' }, fEntities().map(function (e) {
+        return el('div', { class: 'pbox' + (e.idx.indexOf(c.pi) >= 0 ? ' active' : '') },
+          el('div', { class: 'pname', text: e.label }), el('div', { class: 'pscore', text: String(e.score) }));
+      }));
+    }
+    return el('div', null,
+      el('div', { class: 'topbar' }, el('div', { class: 'logo', text: 'Quiz-Abend' }), el('button', { class: 'linkbtn', text: 'Beenden', onclick: fLeaveAsk })),
+      board, el('div', { class: 'progress', text: prog }));
+  }
+
+  function fMeta(it) { return [it.kat, FTYP[it.typ]].filter(Boolean).join(' · '); }
+
+  function fCard(locked) {
+    var c = FG.cur, it = c.it;
+    var card = el('div', { class: 'card' },
+      el('div', { class: 'meta', text: fMeta(it) }),
+      (!locked && speechOK && FG.read !== 'aus')
+        ? el('div', { class: 'speakrow' }, el('button', { class: 'chip', id: 'speakBtn', text: 'Vorlesen', onclick: function () { speak(fQSpeech()); } })) : null,
+      it.bild ? el('div', { class: 'fbild', text: it.bild }) : null,
+      el('div', { class: 'qtext fq', text: it.frage }));
+    if (it.typ === 'mc') {
+      card.append(el('div', { class: 'answers fam' }, c.order.map(function (orig, d) {
+        var cls = 'ans';
+        if (locked) cls += orig === it.richtig ? ' ok' : (c.chosen === orig ? ' bad' : ' dim');
+        return el('button', { class: cls, disabled: locked, onclick: function () { fAnswer(orig); } },
+          el('span', { class: 'letter', text: 'ABCD'.charAt(d) }), el('span', { text: it.antworten[orig] }));
+      })));
+    } else if (it.typ === 'tf') {
+      card.append(el('div', { class: 'answers fam' }, [[true, 'Wahr'], [false, 'Falsch']].map(function (o) {
+        var cls = 'ans tf';
+        if (locked) cls += o[0] === it.richtig ? ' ok' : (c.chosen === o[0] ? ' bad' : ' dim');
+        return el('button', { class: cls, text: o[1], disabled: locked, onclick: function () { fAnswer(o[0]); } });
+      })));
+    } else if (!locked) {
+      if (it.typ === 'fam') card.append(el('div', { class: 'info', text: c.E + ' sagt, ob es stimmt.' }));
+      var yes = it.typ === 'tat' ? 'Geschafft!' : 'Stimmt!', no = it.typ === 'tat' ? 'Nächstes Mal' : 'Stimmt nicht';
+      card.append(el('div', { class: 'btnrow' },
+        el('button', { class: 'btn primary', text: yes, onclick: function () { fAnswer(true); } }),
+        el('button', { class: 'btn', text: no, onclick: function () { fAnswer(false); } })));
+    }
+    return card;
+  }
+
+  function fBanner() {
+    var c = FG.cur, it = c.it, ok = c.ok;
+    var gain = FG.mode === 'gemeinsam' ? 'Ein Stern für die Familie.' : '+1 Punkt';
+    var cls = ok ? 'good' : 'neutral', head, sub;
+    if (it.typ === 'tat') { head = ok ? 'Geschafft!' : 'Nächstes Mal klappt es.'; sub = ok ? gain : 'Mitmachen zählt trotzdem.'; }
+    else if (it.typ === 'fam') { head = ok ? 'Stimmt! Gut gekannt.' : 'Stimmt nicht.'; sub = ok ? gain : 'Jetzt wisst ihr es.'; }
+    else { head = ok ? 'Richtig!' : 'Nicht ganz.'; sub = ok ? gain : 'Richtig ist: ' + fRightText(it); }
+    return el('div', { class: 'banner ' + cls, id: 'fbanner' }, head, el('small', { text: sub }));
+  }
+
+  function viewFPlay() {
+    var c = FG.cur, p = FG.players[c.pi], it = c.it, body;
+    if (c.phase === 'ready') {
+      var hint = p.age === 'k' ? 'Wer das Handy hält, tippt die Antwort für ' + p.name + '.' : (FG.mode === 'gemeinsam' ? 'Alle dürfen helfen.' : '');
+      body = el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'meta', text: FAGE[p.age] }),
+        el('div', { class: 'big', id: 'fwho', text: p.name + ' ist dran' }),
+        hint ? el('div', { class: 'info', style: 'margin-top:10px', text: hint }) : null,
+        el('button', { class: 'btn primary', style: 'margin-top:18px', text: 'Frage zeigen', onclick: fShow }));
+    } else if (c.phase === 'ask') {
+      body = el('div', null, fCard(false),
+        el('div', { class: 'center' }, el('button', { class: 'linkbtn', id: 'skipBtn', text: 'Andere Frage', onclick: fSkip })));
+    } else {
+      var last = FG.turn + 1 >= FG.total;
+      var card = fCard(true);
+      card.append(fBanner());
+      if (it.info) card.append(el('div', { class: 'info', style: 'margin-bottom:0', text: it.info }));
+      body = el('div', null, card, el('button', { class: 'btn primary', id: 'nextBtn', text: last ? 'Zum Ergebnis' : 'Weiter', onclick: fNext }));
+    }
+    return el('div', null, fScoreArea(), body);
+  }
+
+  function viewFResult() {
+    var top, ranking = null;
+    if (FG.mode === 'gemeinsam') {
+      var pct = FG.total ? FG.stars / FG.total : 0;
+      var msg = pct >= 0.8 ? 'Fantastisch, ihr seid ein tolles Team!' : (pct >= 0.5 ? 'Stark gespielt, das war ein gutes Teamergebnis.' : 'Gut gespielt. Beim nächsten Mal holt ihr noch mehr Sterne.');
+      top = el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: 'Eure Sterne' }),
+        el('div', { class: 'big', id: 'fres' }, el('span', { class: 'star', style: 'color:var(--accent)', text: '★' }), ' ' + FG.stars + ' von ' + FG.total),
+        el('div', { class: 'info', style: 'margin:10px 0 0', text: msg }));
+    } else {
+      var ents = fEntities().sort(function (a, b) { return b.score - a.score; });
+      var win = ents.filter(function (e) { return e.score === ents[0].score; });
+      var pts = function (n) { return n + (n === 1 ? ' Punkt' : ' Punkte'); };
+      var ptsDat = function (n) { return n + (n === 1 ? ' Punkt' : ' Punkten'); };
+      top = el('div', { class: 'card center', style: 'padding:26px 16px' },
+        el('div', { class: 'trophy', text: win.length > 1 ? 'Gleichstand' : 'Sieger' }),
+        el('div', { class: 'big', id: 'fres', text: win.map(function (e) { return e.label; }).join(' und ') }),
+        el('div', { class: 'info', style: 'margin:10px 0 0', text: 'mit ' + ptsDat(ents[0].score) + '. Alle haben toll mitgespielt.' }));
+      var rank = 0;
+      ranking = el('div', { class: 'card' }, el('div', { class: 'label', text: 'Rangliste' }), ents.map(function (e, i) {
+        if (i === 0 || e.score !== ents[i - 1].score) rank = i + 1;
+        return el('div', { class: 'row' }, el('span', { class: 'k', text: rank + '. ' + e.label }), el('span', { class: 'v', text: pts(e.score) }));
+      }));
+    }
+    return el('div', null,
+      header('Ergebnis'), top, ranking,
+      el('div', { class: 'hint center', style: 'margin:0 0 14px', text: 'Gespielt haben: ' + FG.players.map(function (p) { return p.name; }).join(', ') + '.' }),
+      el('button', { class: 'btn primary', text: 'Nochmal', onclick: function () { fStart(); } }),
+      el('button', { class: 'btn', text: 'Neu einrichten', onclick: function () { FG = null; go('fsetup'); } }),
+      el('button', { class: 'btn ghost', text: 'Zum Start', onclick: function () { FG = null; go('home'); } }));
+  }
+
+  function fCheck() {
+    var f = S.fam, named = f.players.filter(function (p) { return cleanName(p.name); });
+    if (!(base.fam || []).length) return { ok: false, msg: 'Die Familienfragen konnten nicht geladen werden. Bitte Internet prüfen und die App neu öffnen.' };
+    if (named.length < 2) return { ok: false, msg: 'Bitte mindestens zwei Namen eintragen.' };
+    var seen = {};
+    for (var i = 0; i < named.length; i++) {
+      var k = bilanzKey(cleanName(named[i].name));
+      if (seen[k]) return { ok: false, msg: 'Bitte verschiedene Namen eintragen.' };
+      seen[k] = 1;
+    }
+    if (f.mode === 'reihum' && f.teams) {
+      var tk = {};
+      named.forEach(function (p, j) { tk[p.team ? 'T' + p.team : 'P' + j] = 1; });
+      if (Object.keys(tk).length < 2) return { ok: false, msg: 'Für Teams braucht es mindestens zwei verschiedene Teams.' };
+    }
+    return { ok: true, n: named.length };
+  }
+
+  function viewFSetup() {
+    var f = S.fam;
+    function upd(fn) { fn(); save(); render(); }
+    function chip(label, on, fn) { return el('button', { class: 'chip' + (on ? ' sel' : ''), text: label, onclick: function () { upd(fn); } }); }
+    var startBtn = el('button', { class: 'btn primary', id: 'fstart', text: 'Familienrunde starten', onclick: function () { if (fCheck().ok) fStart(); } });
+    var hintEl = el('div', { class: 'hint', id: 'fhint', style: 'margin:0 0 14px' });
+    function refreshStart() {
+      var c = fCheck();
+      startBtn.disabled = !c.ok;
+      hintEl.className = 'hint' + (c.ok ? '' : ' warn');
+      hintEl.textContent = c.ok ? (c.n * f.rounds) + ' Fragen insgesamt, etwa ' + Math.max(3, Math.round(c.n * f.rounds * 0.8)) + ' Minuten.' : c.msg;
+    }
+    var rows = f.players.map(function (p, i) {
+      return el('div', { class: 'prow' },
+        el('div', { class: 'prow-top' },
+          el('input', { type: 'text', class: 'fname', maxlength: '16', placeholder: 'Name', autocomplete: 'off', autocapitalize: 'words', value: p.name,
+            oninput: function () { p.name = this.value; save(); refreshStart(); } }),
+          f.players.length > 2 ? el('button', { class: 'xbtn', text: '×', 'aria-label': 'Person entfernen', onclick: function () { upd(function () { f.players.splice(i, 1); }); } }) : null),
+        el('div', { class: 'seg small' }, ['k', 'm', 'g', 'e'].map(function (a) {
+          return el('button', { class: p.age === a ? 'sel' : '', text: FAGE[a], onclick: function () { upd(function () { p.age = a; }); } });
+        })),
+        (f.mode === 'reihum' && f.teams) ? el('div', { class: 'chips', style: 'margin-top:8px' }, [0, 1, 2, 3].map(function (t) {
+          return chip(t ? 'Team ' + t : 'Kein Team', p.team === t, function () { p.team = t; });
+        })) : null);
+    });
+    refreshStart();
+    return el('div', null,
+      el('div', { class: 'topbar' }, header('Familienrunde'), el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { notice = ''; go('home'); } })),
+      el('p', { class: 'lead', text: 'Ein Handy für alle. Jede Person bekommt Fragen passend zu ihrer Altersstufe. Namen und Einstellungen bleiben nur auf diesem Handy.' }),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Wer spielt mit?' }),
+        rows,
+        f.players.length < 6 ? el('button', { class: 'btn small', style: 'margin:12px 0 0', text: 'Person hinzufügen', id: 'fadd',
+          onclick: function () { upd(function () { f.players.push({ name: '', age: 'm', team: 0 }); }); } }) : null,
+        el('div', { class: 'hint', text: 'Klein: bis ca. 6 Jahre · Mittel: 7 bis 9 · Groß: 10 bis 12 · Erwachsen: ab 13. Wer noch nicht lesen kann, bekommt die Fragen vorgelesen.' })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Spielform' }),
+        el('div', { class: 'seg' }, [['gemeinsam', 'Gemeinsam'], ['reihum', 'Reihum']].map(function (o) {
+          return el('button', { class: f.mode === o[0] ? 'sel' : '', text: o[1], onclick: function () { upd(function () { f.mode = o[0]; }); } });
+        })),
+        el('div', { class: 'hint', text: f.mode === 'gemeinsam'
+          ? 'Alle sammeln zusammen Sterne. Jede richtige Antwort gibt einen Stern für die ganze Familie. Es gibt keinen Verlierer.'
+          : 'Jede Person (oder jedes Team) sammelt eigene Punkte. Am Ende gibt es eine Rangliste. Wer drankommt, bekommt Fragen für die eigene Stufe.' }),
+        f.mode === 'reihum' ? el('div', { class: 'chips', style: 'margin-top:12px' }, chip('Teams bilden', f.teams, function () { f.teams = !f.teams; })) : null),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Runden' }),
+        el('div', { class: 'stepper', style: 'margin-top:0' },
+          el('button', { text: '−', 'aria-label': 'Weniger Runden', onclick: function () { upd(function () { f.rounds = Math.max(1, f.rounds - 1); }); } }),
+          el('div', { class: 'val', id: 'frounds' }, String(f.rounds), el('span', { class: 'unit', text: f.rounds === 1 ? 'Runde' : 'Runden' })),
+          el('button', { text: '+', 'aria-label': 'Mehr Runden', onclick: function () { upd(function () { f.rounds = Math.min(8, f.rounds + 1); }); } })),
+        el('div', { class: 'hint', text: 'In jeder Runde ist jede Person einmal dran.' })),
+      speechOK ? el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Vorlesen' }),
+        el('div', { class: 'chips' },
+          chip('Für Klein und Mittel automatisch', f.read === 'auto', function () { f.read = 'auto'; }),
+          chip('Nur per Knopf', f.read === 'knopf', function () { f.read = 'knopf'; }),
+          chip('Aus', f.read === 'aus', function () { f.read = 'aus'; })),
+        el('div', { class: 'hint', text: 'Die Sprachausgabe des iPhones liest Frage und Antworten auf Deutsch vor. Bei „Klein“ und „Mittel“ geht es von allein los.' })) : null,
+      hintEl, startBtn);
+  }
+
   function boot() { loadBase().then(function () { render(); }); }
   boot();
 })();

@@ -1,0 +1,1808 @@
+{
+ "version": 1,
+ "name": "Familienfragen",
+ "kategorien": {
+  "tiere": "Tiere",
+  "natur": "Natur & Weltall",
+  "koerper": "Körper",
+  "essen": "Essen & Trinken",
+  "welt": "Welt & Länder",
+  "technik": "Technik & Erfinder",
+  "denken": "Rätsel & Denken",
+  "mitmachen": "Mitmachen",
+  "familie": "Familie"
+ },
+ "fragen": [
+  {
+   "id": "f1-mc-01",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier sagt „Muh“?",
+   "antworten": [
+    "Hund",
+    "Kuh",
+    "Schaf"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f1-mc-02",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier sagt „Wau“?",
+   "antworten": [
+    "Ente",
+    "Hund",
+    "Katze"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f1-mc-03",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier sagt „Miau“?",
+   "antworten": [
+    "Hund",
+    "Kuh",
+    "Katze"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f1-mc-04",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier sagt „Mäh“?",
+   "antworten": [
+    "Schwein",
+    "Schaf",
+    "Pferd"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f1-mc-05",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier sagt „Quak“?",
+   "antworten": [
+    "Hase",
+    "Ente",
+    "Kuh"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f1-mc-06",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier sagt „Kikeriki“?",
+   "antworten": [
+    "Ente",
+    "Schaf",
+    "Hahn"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f1-mc-07",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier hat einen langen Rüssel?",
+   "antworten": [
+    "Elefant",
+    "Pferd",
+    "Giraffe"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f1-mc-08",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier hat einen ganz langen Hals?",
+   "antworten": [
+    "Hund",
+    "Maus",
+    "Giraffe"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f1-mc-09",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier hat Streifen und sieht aus wie ein Pferd?",
+   "antworten": [
+    "Schaf",
+    "Kuh",
+    "Zebra"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f1-mc-10",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier lebt im Wasser und hat Flossen?",
+   "antworten": [
+    "Hase",
+    "Vogel",
+    "Fisch"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f1-mc-11",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Tier legt Eier?",
+   "antworten": [
+    "Kuh",
+    "Hund",
+    "Huhn"
+   ],
+   "richtig": 2,
+   "bild": "🥚"
+  },
+  {
+   "id": "f1-mc-12",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Wie heißt das Baby von der Katze?",
+   "antworten": [
+    "Kätzchen",
+    "Küken",
+    "Welpe"
+   ],
+   "richtig": 0,
+   "bild": "🐱"
+  },
+  {
+   "id": "f1-mc-13",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Wie heißt das Baby vom Hund?",
+   "antworten": [
+    "Kätzchen",
+    "Küken",
+    "Welpe"
+   ],
+   "richtig": 2,
+   "bild": "🐶"
+  },
+  {
+   "id": "f1-mc-14",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welche Farbe hat Gras?",
+   "antworten": [
+    "Rot",
+    "Lila",
+    "Grün"
+   ],
+   "richtig": 2,
+   "bild": "🌱"
+  },
+  {
+   "id": "f1-mc-15",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welche Farbe hat der Himmel an einem sonnigen Tag?",
+   "antworten": [
+    "Blau",
+    "Rot",
+    "Grün"
+   ],
+   "richtig": 0,
+   "bild": "☀️"
+  },
+  {
+   "id": "f1-mc-16",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was wärmt uns am Tag und scheint hell vom Himmel?",
+   "antworten": [
+    "Der Mond",
+    "Eine Wolke",
+    "Die Sonne"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f1-mc-17",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was nimmst du mit, wenn es regnet?",
+   "antworten": [
+    "Einen Regenschirm",
+    "Eine Sonnenbrille",
+    "Einen Sonnenhut"
+   ],
+   "richtig": 0,
+   "bild": "🌧️"
+  },
+  {
+   "id": "f1-mc-18",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was ist kalt und fällt im Winter vom Himmel?",
+   "antworten": [
+    "Sand",
+    "Schnee",
+    "Laub"
+   ],
+   "richtig": 1,
+   "bild": "❄️"
+  },
+  {
+   "id": "f1-mc-19",
+   "kat": "koerper",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Wie viele Augen hast du?",
+   "antworten": [
+    "Eins",
+    "Drei",
+    "Zwei"
+   ],
+   "richtig": 2,
+   "bild": "👀"
+  },
+  {
+   "id": "f1-mc-20",
+   "kat": "koerper",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Wie viele Finger hat eine Hand?",
+   "antworten": [
+    "Sechs",
+    "Fünf",
+    "Vier"
+   ],
+   "richtig": 1,
+   "bild": "✋"
+  },
+  {
+   "id": "f1-mc-21",
+   "kat": "koerper",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Womit hören wir?",
+   "antworten": [
+    "Mit der Nase",
+    "Mit den Ohren",
+    "Mit den Füßen"
+   ],
+   "richtig": 1,
+   "bild": "👂"
+  },
+  {
+   "id": "f1-mc-22",
+   "kat": "koerper",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Womit riechen wir?",
+   "antworten": [
+    "Mit den Ohren",
+    "Mit der Nase",
+    "Mit dem Bauch"
+   ],
+   "richtig": 1,
+   "bild": "👃"
+  },
+  {
+   "id": "f1-mc-23",
+   "kat": "koerper",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was putzt man jeden Tag mit der Zahnbürste?",
+   "antworten": [
+    "Die Haare",
+    "Die Zähne",
+    "Die Schuhe"
+   ],
+   "richtig": 1,
+   "bild": "🦷"
+  },
+  {
+   "id": "f1-mc-24",
+   "kat": "essen",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Woraus macht man Brot?",
+   "antworten": [
+    "Aus Mehl",
+    "Aus Papier",
+    "Aus Sand"
+   ],
+   "richtig": 0,
+   "bild": "🍞"
+  },
+  {
+   "id": "f1-mc-25",
+   "kat": "essen",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was trinken Babys am Anfang?",
+   "antworten": [
+    "Milch",
+    "Kaffee",
+    "Cola"
+   ],
+   "richtig": 0,
+   "bild": "🍼"
+  },
+  {
+   "id": "f1-mc-26",
+   "kat": "essen",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welche Farbe hat eine reife Banane?",
+   "antworten": [
+    "Gelb",
+    "Blau",
+    "Schwarz"
+   ],
+   "richtig": 0,
+   "bild": "🍌"
+  },
+  {
+   "id": "f1-mc-27",
+   "kat": "welt",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Fahrzeug fährt auf Schienen?",
+   "antworten": [
+    "Der Zug",
+    "Das Fahrrad",
+    "Das Auto"
+   ],
+   "richtig": 0,
+   "bild": "🛤️"
+  },
+  {
+   "id": "f1-mc-28",
+   "kat": "welt",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Welches Fahrzeug fährt auf dem Wasser?",
+   "antworten": [
+    "Der Bus",
+    "Der Traktor",
+    "Das Schiff"
+   ],
+   "richtig": 2,
+   "bild": "🌊"
+  },
+  {
+   "id": "f1-mc-29",
+   "kat": "denken",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Wie viele Beine hat ein Hund?",
+   "antworten": [
+    "Zwei",
+    "Vier",
+    "Sechs"
+   ],
+   "richtig": 1,
+   "bild": "🐕"
+  },
+  {
+   "id": "f1-mc-30",
+   "kat": "denken",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was kommt nach dem Montag?",
+   "antworten": [
+    "Der Sonntag",
+    "Der Freitag",
+    "Der Dienstag"
+   ],
+   "richtig": 2,
+   "bild": "📅"
+  },
+  {
+   "id": "f1-mc-31",
+   "kat": "denken",
+   "stufe": 1,
+   "typ": "mc",
+   "frage": "Was ist größer: ein Elefant oder eine Maus?",
+   "antworten": [
+    "Der Elefant",
+    "Die Maus",
+    "Beide gleich groß"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f1-tf-01",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Eine Kuh gibt Milch.",
+   "richtig": true,
+   "bild": "🐄"
+  },
+  {
+   "id": "f1-tf-02",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Ein Hund kann fliegen.",
+   "richtig": false,
+   "bild": "🐕"
+  },
+  {
+   "id": "f1-tf-03",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Die Sonne scheint mitten in der Nacht.",
+   "richtig": false,
+   "bild": "🌙"
+  },
+  {
+   "id": "f1-tf-04",
+   "kat": "natur",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Im Winter kann es schneien.",
+   "richtig": true,
+   "bild": "❄️"
+  },
+  {
+   "id": "f1-tf-05",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Ein Elefant ist kleiner als eine Maus.",
+   "richtig": false
+  },
+  {
+   "id": "f1-tf-06",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Ein Vogel hat Federn.",
+   "richtig": true,
+   "bild": "🐦"
+  },
+  {
+   "id": "f1-tf-07",
+   "kat": "essen",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Eine Banane ist blau.",
+   "richtig": false,
+   "bild": "🍌"
+  },
+  {
+   "id": "f1-tf-08",
+   "kat": "tiere",
+   "stufe": 1,
+   "typ": "tf",
+   "frage": "Bienen machen Honig.",
+   "richtig": true,
+   "bild": "🐝"
+  },
+  {
+   "id": "f1-tat-01",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Mach das Geräusch von einem Hund.",
+   "bild": "🐕"
+  },
+  {
+   "id": "f1-tat-02",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Mach das Geräusch von einer Katze.",
+   "bild": "🐈"
+  },
+  {
+   "id": "f1-tat-03",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Hüpfe dreimal wie ein Hase.",
+   "bild": "🐇"
+  },
+  {
+   "id": "f1-tat-04",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Zähle laut bis zehn.",
+   "bild": "🔢"
+  },
+  {
+   "id": "f1-tat-05",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Stell dich auf ein Bein und zähle bis fünf.",
+   "bild": "🦩"
+  },
+  {
+   "id": "f1-tat-06",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Klatsche fünfmal in die Hände.",
+   "bild": "👏"
+  },
+  {
+   "id": "f1-tat-07",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Zeige auf drei rote Dinge im Zimmer.",
+   "bild": "🔴"
+  },
+  {
+   "id": "f1-tat-08",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Sing den Anfang von deinem Lieblingslied.",
+   "bild": "🎤"
+  },
+  {
+   "id": "f1-tat-09",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Mach ein Gesicht wie ein wütender Löwe.",
+   "bild": "🦁"
+  },
+  {
+   "id": "f1-tat-10",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Laufe wie ein Pinguin einmal durchs Zimmer.",
+   "bild": "🐧"
+  },
+  {
+   "id": "f1-tat-11",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Dreh dich dreimal im Kreis.",
+   "bild": "🌀"
+  },
+  {
+   "id": "f1-tat-12",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Nenne drei Tiere, die im Wasser leben.",
+   "bild": "🐟"
+  },
+  {
+   "id": "f1-tat-13",
+   "kat": "mitmachen",
+   "stufe": 1,
+   "typ": "tat",
+   "frage": "Nenne drei Farben.",
+   "bild": "🎨"
+  },
+  {
+   "id": "f1-fam-01",
+   "kat": "familie",
+   "stufe": 1,
+   "typ": "fam",
+   "frage": "Was ist {Es} Lieblingsfarbe?"
+  },
+  {
+   "id": "f1-fam-02",
+   "kat": "familie",
+   "stufe": 1,
+   "typ": "fam",
+   "frage": "Was isst {E} am liebsten?"
+  },
+  {
+   "id": "f1-fam-03",
+   "kat": "familie",
+   "stufe": 1,
+   "typ": "fam",
+   "frage": "Welches Tier mag {E} am liebsten?"
+  },
+  {
+   "id": "f1-fam-04",
+   "kat": "familie",
+   "stufe": 1,
+   "typ": "fam",
+   "frage": "Wie alt ist {E}? Rate mal."
+  },
+  {
+   "id": "f1-fam-05",
+   "kat": "familie",
+   "stufe": 1,
+   "typ": "fam",
+   "frage": "Was kann {E} richtig gut?"
+  },
+  {
+   "id": "f1-fam-06",
+   "kat": "familie",
+   "stufe": 1,
+   "typ": "fam",
+   "frage": "Welches Eis mag {E} am liebsten?"
+  },
+  {
+   "id": "f2-mc-01",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie viele Planeten hat unser Sonnensystem?",
+   "antworten": [
+    "Acht",
+    "Sieben",
+    "Zehn",
+    "Neun"
+   ],
+   "richtig": 0,
+   "info": "Pluto zählt seit 2006 nicht mehr als Planet, sondern als Zwergplanet."
+  },
+  {
+   "id": "f2-mc-02",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welches ist das größte Tier an Land?",
+   "antworten": [
+    "Das Nashorn",
+    "Der Elefant",
+    "Das Nilpferd",
+    "Die Giraffe"
+   ],
+   "richtig": 1,
+   "info": "Der Afrikanische Elefant kann über sechs Tonnen wiegen."
+  },
+  {
+   "id": "f2-mc-03",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welches Tier ist an Land am schnellsten?",
+   "antworten": [
+    "Der Hase",
+    "Der Löwe",
+    "Das Pferd",
+    "Der Gepard"
+   ],
+   "richtig": 3,
+   "info": "Ein Gepard schafft kurz über 100 Kilometer pro Stunde."
+  },
+  {
+   "id": "f2-mc-04",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie heißt das Baby vom Pferd?",
+   "antworten": [
+    "Lamm",
+    "Fohlen",
+    "Ferkel",
+    "Kalb"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f2-mc-05",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie viele Beine hat eine Spinne?",
+   "antworten": [
+    "Zehn",
+    "Acht",
+    "Sechs",
+    "Vier"
+   ],
+   "richtig": 1,
+   "info": "Spinnen sind keine Insekten. Insekten haben sechs Beine."
+  },
+  {
+   "id": "f2-mc-06",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie viele Beine hat ein Insekt, zum Beispiel eine Biene?",
+   "antworten": [
+    "Zehn",
+    "Vier",
+    "Acht",
+    "Sechs"
+   ],
+   "richtig": 3
+  },
+  {
+   "id": "f2-mc-07",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welcher Ozean ist der größte der Erde?",
+   "antworten": [
+    "Der Pazifik",
+    "Der Atlantik",
+    "Der Arktische Ozean",
+    "Der Indische Ozean"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f2-mc-08",
+   "kat": "welt",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie heißt die Hauptstadt von Deutschland?",
+   "antworten": [
+    "Berlin",
+    "München",
+    "Hamburg",
+    "Köln"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f2-mc-09",
+   "kat": "welt",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "In welchem Land steht der Eiffelturm?",
+   "antworten": [
+    "Spanien",
+    "Italien",
+    "England",
+    "Frankreich"
+   ],
+   "richtig": 3,
+   "info": "Der Eiffelturm steht in Paris und ist rund 330 Meter hoch."
+  },
+  {
+   "id": "f2-mc-10",
+   "kat": "denken",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie viele Tage hat ein normales Jahr?",
+   "antworten": [
+    "360",
+    "365",
+    "300",
+    "400"
+   ],
+   "richtig": 1,
+   "info": "Alle vier Jahre gibt es ein Schaltjahr mit 366 Tagen."
+  },
+  {
+   "id": "f2-mc-11",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie heißt der lange Schlaf im Winter, den zum Beispiel der Igel hält?",
+   "antworten": [
+    "Mittagsschlaf",
+    "Sommerschlaf",
+    "Dauerschlaf",
+    "Winterschlaf"
+   ],
+   "richtig": 3
+  },
+  {
+   "id": "f2-mc-12",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welcher Planet ist der Sonne am nächsten?",
+   "antworten": [
+    "Merkur",
+    "Mars",
+    "Venus",
+    "Erde"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f2-mc-13",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welches Tier legt die größten Eier?",
+   "antworten": [
+    "Der Adler",
+    "Das Huhn",
+    "Der Strauß",
+    "Die Gans"
+   ],
+   "richtig": 2,
+   "info": "Ein Straußenei wiegt etwa so viel wie 20 Hühnereier."
+  },
+  {
+   "id": "f2-mc-14",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welches Säugetier kann fliegen?",
+   "antworten": [
+    "Das Eichhörnchen",
+    "Der Adler",
+    "Die Fledermaus",
+    "Der Pinguin"
+   ],
+   "richtig": 2,
+   "info": "Der Adler ist ein Vogel, die Fledermaus ein Säugetier."
+  },
+  {
+   "id": "f2-mc-15",
+   "kat": "welt",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welcher Kontinent ist der kälteste?",
+   "antworten": [
+    "Europa",
+    "Afrika",
+    "Die Antarktis",
+    "Australien"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f2-mc-16",
+   "kat": "koerper",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welches Organ pumpt das Blut durch den Körper?",
+   "antworten": [
+    "Die Lunge",
+    "Die Leber",
+    "Das Herz",
+    "Der Magen"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f2-mc-17",
+   "kat": "koerper",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Womit atmen wir?",
+   "antworten": [
+    "Mit der Lunge",
+    "Mit dem Magen",
+    "Mit dem Herzen",
+    "Mit den Nieren"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f2-mc-18",
+   "kat": "denken",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welche Farbe entsteht, wenn man Blau und Gelb mischt?",
+   "antworten": [
+    "Lila",
+    "Orange",
+    "Braun",
+    "Grün"
+   ],
+   "richtig": 3,
+   "bild": "🎨"
+  },
+  {
+   "id": "f2-mc-19",
+   "kat": "denken",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welche Farbe entsteht, wenn man Rot und Gelb mischt?",
+   "antworten": [
+    "Orange",
+    "Grün",
+    "Lila",
+    "Rosa"
+   ],
+   "richtig": 0,
+   "bild": "🎨"
+  },
+  {
+   "id": "f2-mc-20",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Von welchem Tier bekommt man Wolle?",
+   "antworten": [
+    "Vom Schaf",
+    "Vom Schwein",
+    "Vom Huhn",
+    "Von der Kuh"
+   ],
+   "richtig": 0,
+   "bild": "🧶"
+  },
+  {
+   "id": "f2-mc-21",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Welches Tier lebt im Meer und ist ein Säugetier?",
+   "antworten": [
+    "Der Delfin",
+    "Der Thunfisch",
+    "Der Hai",
+    "Die Qualle"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f2-mc-22",
+   "kat": "welt",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Wie heißt die Hauptstadt von Italien?",
+   "antworten": [
+    "Neapel",
+    "Venedig",
+    "Rom",
+    "Mailand"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f2-mc-23",
+   "kat": "denken",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Was ergibt 7 mal 8?",
+   "antworten": [
+    "64",
+    "48",
+    "56",
+    "54"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f2-mc-24",
+   "kat": "denken",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Was ergibt 9 mal 6?",
+   "antworten": [
+    "63",
+    "45",
+    "54",
+    "56"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f2-mc-25",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "mc",
+   "frage": "Was brauchen Pflanzen zum Wachsen?",
+   "antworten": [
+    "Licht und Wasser",
+    "Nur Sand",
+    "Nur Eis",
+    "Nur Dunkelheit"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f2-tf-01",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Eine Spinne ist ein Insekt.",
+   "richtig": false,
+   "info": "Spinnen sind Spinnentiere und haben acht Beine."
+  },
+  {
+   "id": "f2-tf-02",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Delfine sind Säugetiere.",
+   "richtig": true,
+   "info": "Delfine atmen Luft und säugen ihre Jungen."
+  },
+  {
+   "id": "f2-tf-03",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Der Mond leuchtet von allein.",
+   "richtig": false,
+   "info": "Der Mond wird von der Sonne angestrahlt und wirft das Licht zurück."
+  },
+  {
+   "id": "f2-tf-04",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Fledermäuse sind Vögel.",
+   "richtig": false
+  },
+  {
+   "id": "f2-tf-05",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Die Erde dreht sich um die Sonne.",
+   "richtig": true
+  },
+  {
+   "id": "f2-tf-06",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Pinguine können fliegen.",
+   "richtig": false,
+   "info": "Pinguine sind dafür aber ausgezeichnete Schwimmer."
+  },
+  {
+   "id": "f2-tf-07",
+   "kat": "welt",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Kängurus leben in Afrika.",
+   "richtig": false,
+   "info": "Kängurus leben in Australien."
+  },
+  {
+   "id": "f2-tf-08",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Gold ist ein Metall.",
+   "richtig": true
+  },
+  {
+   "id": "f2-tf-09",
+   "kat": "tiere",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Haie sind Säugetiere.",
+   "richtig": false,
+   "info": "Haie sind Fische und atmen mit Kiemen."
+  },
+  {
+   "id": "f2-tf-10",
+   "kat": "natur",
+   "stufe": 2,
+   "typ": "tf",
+   "frage": "Ein Regenbogen hat sieben Farben.",
+   "richtig": true,
+   "info": "Rot, Orange, Gelb, Grün, Blau, Indigo und Violett."
+  },
+  {
+   "id": "f2-tat-01",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Zähle rückwärts von 20 bis 0, so schnell du kannst.",
+   "bild": "⏱️"
+  },
+  {
+   "id": "f2-tat-02",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Nenne vier Tiere, die mit „B“ anfangen.",
+   "bild": "🐻"
+  },
+  {
+   "id": "f2-tat-03",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Mach ein Tier nach. Die anderen raten, welches es ist.",
+   "bild": "🎭"
+  },
+  {
+   "id": "f2-tat-04",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Sag „Fischers Fritz fischt frische Fische“ dreimal schnell hintereinander.",
+   "bild": "🐟"
+  },
+  {
+   "id": "f2-tat-05",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Stell dich auf ein Bein und zähle bis zehn, ohne zu wackeln.",
+   "bild": "🦩"
+  },
+  {
+   "id": "f2-tat-06",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Nenne fünf Länder.",
+   "bild": "🌍"
+  },
+  {
+   "id": "f2-tat-07",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Finde drei Wörter, die sich auf „Haus“ reimen.",
+   "bild": "🏠"
+  },
+  {
+   "id": "f2-tat-08",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Male ein Tier in die Luft. Die anderen raten, welches es ist.",
+   "bild": "✏️"
+  },
+  {
+   "id": "f2-tat-09",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Buchstabiere deinen Namen rückwärts.",
+   "bild": "🔤"
+  },
+  {
+   "id": "f2-tat-10",
+   "kat": "mitmachen",
+   "stufe": 2,
+   "typ": "tat",
+   "frage": "Mach zehn Hampelmänner und zähle laut mit.",
+   "bild": "🤸"
+  },
+  {
+   "id": "f2-fam-01",
+   "kat": "familie",
+   "stufe": 2,
+   "typ": "fam",
+   "frage": "Was ist {Es} Lieblingsessen?"
+  },
+  {
+   "id": "f2-fam-02",
+   "kat": "familie",
+   "stufe": 2,
+   "typ": "fam",
+   "frage": "Welches Hobby hat {E}?"
+  },
+  {
+   "id": "f2-fam-03",
+   "kat": "familie",
+   "stufe": 2,
+   "typ": "fam",
+   "frage": "Was hat {E} als Kind am liebsten gespielt?",
+   "ziel": "erw"
+  },
+  {
+   "id": "f2-fam-04",
+   "kat": "familie",
+   "stufe": 2,
+   "typ": "fam",
+   "frage": "Wohin würde {E} am liebsten in den Urlaub fahren?"
+  },
+  {
+   "id": "f2-fam-05",
+   "kat": "familie",
+   "stufe": 2,
+   "typ": "fam",
+   "frage": "Was ist {Es} Lieblingsfilm oder Lieblingsserie?"
+  },
+  {
+   "id": "f2-fam-06",
+   "kat": "familie",
+   "stufe": 2,
+   "typ": "fam",
+   "frage": "Wer ist {Es} beste Freundin oder bester Freund?"
+  },
+  {
+   "id": "f3-mc-01",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welcher Fluss ist der längste, der durch Deutschland fließt?",
+   "antworten": [
+    "Die Donau",
+    "Die Elbe",
+    "Der Main",
+    "Der Rhein"
+   ],
+   "richtig": 3
+  },
+  {
+   "id": "f3-mc-02",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie viele Bundesländer hat Deutschland?",
+   "antworten": [
+    "16",
+    "14",
+    "18",
+    "12"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f3-mc-03",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welches Metall ist bei Zimmertemperatur flüssig?",
+   "antworten": [
+    "Zinn",
+    "Quecksilber",
+    "Kupfer",
+    "Eisen"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-mc-04",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Woraus besteht der größte Teil der Luft?",
+   "antworten": [
+    "Aus Stickstoff",
+    "Aus Sauerstoff",
+    "Aus Kohlendioxid",
+    "Aus Wasserstoff"
+   ],
+   "richtig": 0,
+   "info": "Etwa vier Fünftel der Luft sind Stickstoff, ein Fünftel ist Sauerstoff."
+  },
+  {
+   "id": "f3-mc-05",
+   "kat": "koerper",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welches Organ filtert das Blut und bildet den Urin?",
+   "antworten": [
+    "Die Nieren",
+    "Die Milz",
+    "Die Leber",
+    "Die Lunge"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f3-mc-06",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie heißt der höchste Berg der Erde?",
+   "antworten": [
+    "Zugspitze",
+    "Mont Blanc",
+    "K2",
+    "Mount Everest"
+   ],
+   "richtig": 3,
+   "info": "Der Mount Everest ist rund 8849 Meter hoch."
+  },
+  {
+   "id": "f3-mc-07",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie heißt der höchste Berg Deutschlands?",
+   "antworten": [
+    "Der Feldberg",
+    "Der Brocken",
+    "Der Watzmann",
+    "Die Zugspitze"
+   ],
+   "richtig": 3,
+   "info": "Die Zugspitze ist 2962 Meter hoch."
+  },
+  {
+   "id": "f3-mc-08",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welcher ist der größte Planet in unserem Sonnensystem?",
+   "antworten": [
+    "Neptun",
+    "Jupiter",
+    "Uranus",
+    "Saturn"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-mc-09",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "In welchem Land steht das Kolosseum?",
+   "antworten": [
+    "In Spanien",
+    "In der Türkei",
+    "In Griechenland",
+    "In Italien"
+   ],
+   "richtig": 3,
+   "info": "Das Kolosseum steht in Rom und ist fast 2000 Jahre alt."
+  },
+  {
+   "id": "f3-mc-10",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welche Sprache spricht man in Brasilien?",
+   "antworten": [
+    "Spanisch",
+    "Brasilianisch",
+    "Englisch",
+    "Portugiesisch"
+   ],
+   "richtig": 3
+  },
+  {
+   "id": "f3-mc-11",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie heißt die Hauptstadt von Australien?",
+   "antworten": [
+    "Melbourne",
+    "Perth",
+    "Sydney",
+    "Canberra"
+   ],
+   "richtig": 3,
+   "info": "Viele denken an Sydney, aber die Hauptstadt ist Canberra."
+  },
+  {
+   "id": "f3-mc-12",
+   "kat": "koerper",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie viele Zähne hat ein Erwachsener normalerweise mit Weisheitszähnen?",
+   "antworten": [
+    "24",
+    "28",
+    "36",
+    "32"
+   ],
+   "richtig": 3
+  },
+  {
+   "id": "f3-mc-13",
+   "kat": "tiere",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welches ist das größte Tier der Welt?",
+   "antworten": [
+    "Der Blauwal",
+    "Der Walhai",
+    "Der Pottwal",
+    "Der Elefant"
+   ],
+   "richtig": 0,
+   "info": "Ein Blauwal kann fast 30 Meter lang werden."
+  },
+  {
+   "id": "f3-mc-14",
+   "kat": "technik",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wer hat den Buchdruck mit beweglichen Buchstaben erfunden?",
+   "antworten": [
+    "Johannes Gutenberg",
+    "Albert Einstein",
+    "Carl Benz",
+    "Rudolf Diesel"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f3-mc-15",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie viele Spieler einer Mannschaft stehen beim Fußball gleichzeitig auf dem Feld?",
+   "antworten": [
+    "Zehn",
+    "Zwölf",
+    "Elf",
+    "Neun"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f3-mc-16",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Woraus besteht ein Diamant?",
+   "antworten": [
+    "Aus Kohlenstoff",
+    "Aus Quarz",
+    "Aus Glas",
+    "Aus Eisen"
+   ],
+   "richtig": 0
+  },
+  {
+   "id": "f3-mc-17",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welches Gas nehmen Pflanzen bei der Fotosynthese auf?",
+   "antworten": [
+    "Stickstoff",
+    "Kohlendioxid",
+    "Sauerstoff",
+    "Helium"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-mc-18",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie heißt die Währung in der Schweiz?",
+   "antworten": [
+    "Krone",
+    "Pfund",
+    "Franken",
+    "Euro"
+   ],
+   "richtig": 2
+  },
+  {
+   "id": "f3-mc-19",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wie viele Minuten dauert ein Fußballspiel normalerweise, ohne Nachspielzeit?",
+   "antworten": [
+    "100",
+    "90",
+    "60",
+    "80"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-mc-20",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welches Land hat die Form eines Stiefels?",
+   "antworten": [
+    "Griechenland",
+    "Spanien",
+    "Portugal",
+    "Italien"
+   ],
+   "richtig": 3
+  },
+  {
+   "id": "f3-mc-21",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welcher Planet wird auch der Rote Planet genannt?",
+   "antworten": [
+    "Jupiter",
+    "Mars",
+    "Merkur",
+    "Venus"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-mc-22",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Welcher Stoff macht Blätter grün?",
+   "antworten": [
+    "Kohlenstoff",
+    "Chlorophyll",
+    "Stärke",
+    "Zucker"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-mc-23",
+   "kat": "koerper",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Aus wie vielen Knochen besteht ein erwachsener Mensch ungefähr?",
+   "antworten": [
+    "Aus etwa 200",
+    "Aus etwa 100",
+    "Aus etwa 1000",
+    "Aus etwa 500"
+   ],
+   "richtig": 0,
+   "info": "Genau sind es meist 206. Babys haben mehr, weil manche Knochen später zusammenwachsen."
+  },
+  {
+   "id": "f3-mc-24",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "mc",
+   "frage": "Wer hat die Mona Lisa gemalt?",
+   "antworten": [
+    "Pablo Picasso",
+    "Leonardo da Vinci",
+    "Vincent van Gogh",
+    "Michelangelo"
+   ],
+   "richtig": 1
+  },
+  {
+   "id": "f3-tf-01",
+   "kat": "tiere",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Der Blauwal ist das größte Tier der Welt.",
+   "richtig": true
+  },
+  {
+   "id": "f3-tf-02",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Ein Blitz ist heißer als die Oberfläche der Sonne.",
+   "richtig": true,
+   "info": "Ein Blitz erreicht bis zu 30 000 Grad, die Sonnenoberfläche rund 5500 Grad."
+  },
+  {
+   "id": "f3-tf-03",
+   "kat": "natur",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Ein Tag auf der Venus ist länger als ein Jahr auf der Venus.",
+   "richtig": true,
+   "info": "Die Venus dreht sich so langsam, dass eine Drehung länger dauert als ein Umlauf um die Sonne."
+  },
+  {
+   "id": "f3-tf-04",
+   "kat": "essen",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Eine Tomate ist botanisch gesehen eine Beere.",
+   "richtig": true
+  },
+  {
+   "id": "f3-tf-05",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Das Great Barrier Reef liegt vor der Küste Südafrikas.",
+   "richtig": false,
+   "info": "Das riesige Riff liegt vor Australien."
+  },
+  {
+   "id": "f3-tf-06",
+   "kat": "koerper",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Wir Menschen nutzen nur zehn Prozent unseres Gehirns.",
+   "richtig": false,
+   "info": "Das ist ein Mythos. Wir nutzen das ganze Gehirn, nur nicht alles gleichzeitig."
+  },
+  {
+   "id": "f3-tf-07",
+   "kat": "technik",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Der Eiffelturm ist im Sommer ein paar Zentimeter höher als im Winter.",
+   "richtig": true,
+   "info": "Metall dehnt sich bei Wärme aus."
+  },
+  {
+   "id": "f3-tf-08",
+   "kat": "essen",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Honig kann man jahrelang aufbewahren, ohne dass er schlecht wird.",
+   "richtig": true
+  },
+  {
+   "id": "f3-tf-09",
+   "kat": "tiere",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Ein Oktopus hat drei Herzen.",
+   "richtig": true
+  },
+  {
+   "id": "f3-tf-10",
+   "kat": "welt",
+   "stufe": 3,
+   "typ": "tf",
+   "frage": "Die Chinesische Mauer ist vom Mond aus mit bloßem Auge zu sehen.",
+   "richtig": false,
+   "info": "Auch das ist ein Mythos. Sie ist viel zu schmal."
+  },
+  {
+   "id": "f3-tat-01",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Nenne in 30 Sekunden so viele Tiere mit „A“ wie möglich. Fünf reichen für „Geschafft“.",
+   "bild": "🕐"
+  },
+  {
+   "id": "f3-tat-02",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Erkläre, was ein Kühlschrank ist, ohne das Wort „kalt“ oder „Essen“ zu benutzen.",
+   "bild": "🧊"
+  },
+  {
+   "id": "f3-tat-03",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Sag das Alphabet rückwärts, von Z bis mindestens R.",
+   "bild": "🔤"
+  },
+  {
+   "id": "f3-tat-04",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Mach eine Person aus der Familie nach. Die anderen raten, wer es ist.",
+   "bild": "🎭"
+  },
+  {
+   "id": "f3-tat-05",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Beschreibe dein Zimmer in drei Sätzen, ohne eine Farbe zu nennen.",
+   "bild": "🛏️"
+  },
+  {
+   "id": "f3-tat-06",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Sag „Blaukraut bleibt Blaukraut und Brautkleid bleibt Brautkleid“ zweimal ohne Fehler.",
+   "bild": "👰"
+  },
+  {
+   "id": "f3-tat-07",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Nenne acht Länder in 20 Sekunden.",
+   "bild": "🌍"
+  },
+  {
+   "id": "f3-tat-08",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Mach 15 Kniebeugen und zähle laut mit.",
+   "bild": "🏋️"
+  },
+  {
+   "id": "f3-tat-09",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Berichte 20 Sekunden lang wie ein Reporter über das heutige Wetter.",
+   "bild": "🎙️"
+  },
+  {
+   "id": "f3-tat-10",
+   "kat": "mitmachen",
+   "stufe": 3,
+   "typ": "tat",
+   "frage": "Erzähle in drei Sätzen eine Geschichte mit den Wörtern Drache, Pizza und Rakete.",
+   "bild": "🐉"
+  },
+  {
+   "id": "f3-fam-01",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Was ist {Es} Lieblingsessen?"
+  },
+  {
+   "id": "f3-fam-02",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Was würde {E} tun, wenn {E} einen Tag lang alles bestimmen dürfte?"
+  },
+  {
+   "id": "f3-fam-03",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Welche Superkraft hätte {E} am liebsten?"
+  },
+  {
+   "id": "f3-fam-04",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Welches Fach mochte {E} in der Schule am liebsten?",
+   "ziel": "erw"
+  },
+  {
+   "id": "f3-fam-05",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Welches Lied hört {E} gerade am liebsten?"
+  },
+  {
+   "id": "f3-fam-06",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Was möchte {E} unbedingt einmal erleben?"
+  },
+  {
+   "id": "f3-fam-07",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Welchen Beruf wollte {E} als Kind werden?",
+   "ziel": "erw"
+  },
+  {
+   "id": "f3-fam-08",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Worüber kann {E} am meisten lachen?"
+  },
+  {
+   "id": "f3-fam-09",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Was findet {E} an unserer Familie besonders schön?"
+  },
+  {
+   "id": "f3-fam-10",
+   "kat": "familie",
+   "stufe": 3,
+   "typ": "fam",
+   "frage": "Wie heißt {Es} Lieblingsfilm?"
+  }
+ ]
+}

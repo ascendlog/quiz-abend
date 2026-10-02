@@ -4,9 +4,10 @@ Quizspiel für zwei – gedacht für einen Spieleabend zu zweit, läuft als Web-
 
 ## Dateien
 
-- `index.html` – die App: Wissensspiel „Wer weiß mehr?“ (ein Handy abwechselnd oder zwei Handys live) und der „Paarabend“ (zwei Handys)
+- `index.html` – die App: Wissensspiel „Wer weiß mehr?“ (ein Handy abwechselnd oder zwei Handys live), der „Paarabend“ (zwei Handys) und die „Familienrunde“ (ein Handy für alle)
 - `fragen.json` – Fragenpaket (102 Fragen: Geografie, Geschichte, Natur & Wissenschaft inkl. Psychologie, Kultur, Sport, Mode)
 - `paarfragen.json` – Vorschläge für den Paarabend (64 Fragen in drei Stufen, Freitext oder Auswahl)
+- `familienfragen.json` – Fragen für die Familienrunde (163 Fragen in drei Altersstufen: Auswahl, Wahr/Falsch, Mitmach-Aufgaben, Familienfragen)
 - `verbindungstest.html` – Diagnose-Seite: prüft, ob sich zwei iPhones im WLAN direkt verbinden
 - `icon.png` – Symbol für den Home-Bildschirm
 
@@ -51,13 +52,26 @@ Gilt für den Paarabend und das Zwei-Handy-Spiel, zum Beispiel wenn ein Kind auf
 - „Verwerfen“ an der Karte löscht den pausierten Abend auf dem jeweiligen Handy. „Spiel beenden“ im Pause-Dialog beendet den Abend ohne Pause. Wer einen neuen Raum erstellt, während ein Abend pausiert ist, wird vorher gefragt.
 - In der Wartehalle und am Ende gibt es keinen Pause-Dialog, dort reicht „Raum schließen“ / „Verlassen“ bzw. „Zum Start“.
 
+## Familienrunde (ein Handy für alle)
+
+Startseite → „Familienrunde starten“. Gedacht für 2 bis 6 Personen an einem Handy, auch mit Kindern, die noch kein eigenes Handy haben.
+
+- Einrichten: Namen eintragen und je Person eine Altersstufe wählen (Klein bis ca. 6 Jahre, Mittel 7 bis 9, Groß 10 bis 12, Erwachsen ab 13). Namen und Einstellungen bleiben nur auf diesem Handy, nicht im Repo.
+- Ablauf: Die Personen sind reihum dran. Der Bildschirm sagt, wer als Nächstes dran ist, erst dann kommt „Frage zeigen“. Wer noch nicht lesen kann, bekommt die Frage vorgelesen, die Antwort tippt, wer das Handy hält. Es gibt keinen Zeitdruck.
+- Jede Person bekommt Fragen passend zur Stufe. Klein und Mittel nutzen nur die Familienfragen, Groß und Erwachsen zusätzlich leichte bis mittlere Wissensfragen (ohne Psychologie). Die Fragenarten sind Auswahl, Wahr/Falsch, Mitmach-Aufgaben („Hüpfe dreimal wie ein Hase.“) und Familienfragen („Was isst Anna am liebsten?“, die genannte Person sagt, ob die Antwort stimmt).
+- „Andere Frage“ tauscht eine Frage aus, ohne dass es etwas kostet.
+- Spielform „Gemeinsam“: Alle sammeln zusammen Sterne, jede richtige Antwort bringt einen Stern für die ganze Familie. Es gibt keinen Verlierer. „Reihum“: Jede Person (oder jedes Team, optional „Teams bilden“) sammelt Punkte, am Ende gibt es eine Rangliste, auch mit Gleichstand.
+- Vorlesen: Die Sprachausgabe des iPhones liest Frage und Antworten auf Deutsch vor. Einstellbar: für Klein und Mittel automatisch, nur per Knopf „Vorlesen“ oder aus. Dafür muss am iPhone der Ton an sein; bleibt es stumm, bitte Lautstärke und Stummschalter prüfen.
+- Pause: Oben rechts „Beenden“ → „Pause machen“. Der Stand bleibt gespeichert, auf der Startseite steht „Familienrunde läuft“ mit „Fortsetzen“ und „Verwerfen“. Gespeichert werden Spielerinnen und Spieler, Punkte und die aktuelle Frage.
+- Bereits gestellte Familienfragen werden vermerkt, damit sich Fragen nicht so schnell wiederholen. Die Sicherung enthält die Familienrunde-Einstellungen (Namen, Altersstufen, Spielform) und diese Liste.
+
 ## Eigene Wissensfragen
 
 Über „Importieren“ auf dem Startbildschirm lassen sich weitere Fragen als JSON-Datei laden. Sie bleiben nur lokal im Browser des Handys gespeichert (nicht im öffentlichen Repo). Im Zwei-Handy-Modus zählen die Fragen von Handy 1. Format wie in `fragen.json`. Eine Sicherung (siehe unten) lässt sich auf demselben Weg wieder einspielen.
 
 ## Sicherung und Wiederherstellung
 
-Startbildschirm → „Sicherung“. Eine Sicherung enthält eigene Wissensfragen, eigene Paarfragen, die Bilanz, Namen und welche Fragen schon gestellt wurden.
+Startbildschirm → „Sicherung“. Eine Sicherung enthält eigene Wissensfragen, eigene Paarfragen, die Bilanz, Namen, die Einstellungen der Familienrunde (Namen und Altersstufen) und welche Fragen schon gestellt wurden.
 
 - „Sicherung speichern / teilen“ öffnet auf dem iPhone das Teilen-Menü (z. B. „In Dateien sichern“ oder an sich selbst schicken). Ohne Teilen-Menü wird eine Datei heruntergeladen.
 - „Als Text kopieren“ legt die Sicherung in die Zwischenablage, z. B. zum Einfügen in eine Notiz.
