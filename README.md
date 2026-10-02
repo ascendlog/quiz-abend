@@ -24,7 +24,8 @@ Quizspiel für zwei – gedacht für einen Spieleabend zu zweit, läuft als Web-
 - Handy 2: „Zwei Handys“ → Name → Code eingeben → „Beitreten“. Dann startet Handy 1 das Spiel.
 - Beide sehen dieselbe Frage und antworten gleichzeitig; der Zeitbonus zählt für jede Person einzeln.
 - 50:50 ist privat (nur auf dem eigenen Handy), „Tauschen“ wechselt die Frage für beide und geht nur, solange noch niemand geantwortet hat.
-- Bricht eine Verbindung ab (z. B. Sperrbildschirm), pausiert die Frage und läuft nach dem automatischen Wiederverbinden weiter.
+- Bricht eine Verbindung ab (z. B. Sperrbildschirm), pausiert die Frage und läuft nach dem automatischen Wiederverbinden weiter. Das dauert meist 2 bis 6 Sekunden: Beim Entsperren prüft die App die Verbindung sofort, nach langer Pause baut sie direkt neu auf. Öffnet Handy 2 die App neu und tritt mit demselben Namen wieder bei, übernimmt Handy 1 die neue Verbindung sofort. Ein anderer Name bekommt weiter „Raum belegt“.
+- Findet Handy 2 den Raum nicht (z. B. weil Handy 1 noch neu lädt), fragt es zuerst alle 1,5 Sekunden, später alle 3 Sekunden nach, insgesamt gut eine Minute lang.
 - Handy 1 hält den Spielstand. Lädt Handy 1 neu, kann es über „Fortsetzen“ den Raum mit demselben Code wieder öffnen.
 - Verbindung: direkt zwischen den Handys (WebRTC), vermittelt über den öffentlichen PeerJS-Server. Nur die Bibliothek wird von dort geladen, Fragen und Antworten laufen nicht über einen Server.
 
@@ -46,7 +47,7 @@ Gilt für den Paarabend und das Zwei-Handy-Spiel, zum Beispiel wenn ein Kind auf
 
 - Oben rechts „Beenden“ tippen → „Pause machen“. Beide Handys landen auf dem Startbildschirm, der Stand bleibt gespeichert (auch beim Schließen der App). Es spielt keine Rolle, wer die Pause macht.
 - Weitermachen: Zuerst tippt Handy 1 auf der Startseite bei der Karte „… pausiert“ auf „Fortsetzen“. Danach tippt Handy 2 bei seiner Karte auf „Fortsetzen“ und verbindet sich automatisch. Ihr landet genau in der Frage, in der ihr aufgehört habt, bereits gegebene Antworten bleiben erhalten.
-- Tippt Handy 2 zu früh, sucht es einfach weiter, bis Handy 1 den Raum geöffnet hat (nach rund 75 Sekunden ggf. noch einmal „Fortsetzen“ tippen).
+- Tippt Handy 2 zu früh, sucht es einfach weiter, bis Handy 1 den Raum geöffnet hat (nach gut einer Minute ggf. noch einmal „Fortsetzen“ tippen).
 - „Verwerfen“ an der Karte löscht den pausierten Abend auf dem jeweiligen Handy. „Spiel beenden“ im Pause-Dialog beendet den Abend ohne Pause. Wer einen neuen Raum erstellt, während ein Abend pausiert ist, wird vorher gefragt.
 - In der Wartehalle und am Ende gibt es keinen Pause-Dialog, dort reicht „Raum schließen“ / „Verlassen“ bzw. „Zum Start“.
 

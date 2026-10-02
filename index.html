@@ -1187,18 +1187,29 @@
   function attachConn(c) {
     if (net.conn && net.conn !== c) { var old = net.conn; net.conn = null; try { old.close(); } catch (e) {} }
     net.conn = c; net.connStart = Date.now();
-    c.on('open', function () {
+    function opened() {
       if (net.conn !== c) return;
       c._was = true; dbg('Verbindung offen (' + net.role + ')');
       net.lastRx = Date.now(); net.rcTries = 0; net.up = true; net.everUp = true;
       startHb(); requestWake();
       setTimeout(detectRoute, 1500);
+      try {
+        var pc = c.peerConnection;
+        if (pc && pc.addEventListener) pc.addEventListener('iceconnectionstatechange', function () {
+          if (net.conn !== c) return;
+          dbg('ICE: ' + pc.iceConnectionState);
+          if (pc.iceConnectionState === 'failed') linkDown('ice');
+          else if (pc.iceConnectionState === 'disconnected') checkAlive(2000);
+        });
+      } catch (e) {}
       if (net.role === 'guest') {
         lui.awaitSync = true;
         netSend({ t: 'hi', name: myName() });
         netMsg('Verbunden. Warte auf Handy 1 …');
       } else renderLive();
-    });
+    }
+    c.on('open', opened);
+    if (c.open && !c._was) opened();
     c.on('data', function (d) { if (net.conn === c) onNetData(d); });
     c.on('close', function () {
       if (net.conn !== c) return;
@@ -1209,7 +1220,7 @@
     c.on('error', function (err) {
       if (net.conn !== c) return;
       dbg('Verbindungsfehler: ' + (err && (err.type || err.message) || '?'));
-      if (!net.up && net.role === 'guest') scheduleReconnect(2000);
+      if (!net.up && net.role === 'guest') { dropPending(); scheduleReconnect(2000); }
     });
   }
 
@@ -1223,30 +1234,37 @@
       lGuestGone(reason);
     } else {
       net.msg = msg || 'Verbindung unterbrochen. Verbinde neu …';
-      scheduleReconnect(1000);
+      kickReconnect(150);
     }
     renderLive();
   }
 
   function startHb() {
     stopHb();
+    net.lastTick = Date.now(); net.tk = 0;
     net.hb = setInterval(function () {
       if (!net.conn || !net.conn.open || !net.up) return;
-      netSend({ t: 'ping', n: Date.now() });
-      if (net.role === 'host' && L && L.kind === 'paar' && L.phase !== 'lobby') {
-        net.tickN = (net.tickN || 0) + 1;
-        if (net.tickN % 2 === 0) netSend({ t: 'v', v: lBuild(1) });
+      var now = Date.now(), gap = now - net.lastTick; net.lastTick = now;
+      // War die Seite eingefroren (Sperrbildschirm), ist lastRx alt, die Verbindung aber evtl. noch gut: kurz anpingen
+      if (gap > 3000) { dbg('Pause von ' + Math.round(gap / 1000) + ' s erkannt'); checkAlive(1500); return; }
+      net.tk++;
+      if (net.tk % 3 === 0) {
+        netSend({ t: 'ping', n: now });
+        if (net.role === 'host' && L && L.kind === 'paar' && L.phase !== 'lobby') {
+          net.tickN = (net.tickN || 0) + 1;
+          if (net.tickN % 2 === 0) netSend({ t: 'v', v: lBuild(1) });
+        }
       }
-      if (Date.now() - net.lastRx > 7000) linkDown('silence');
-    }, 2000);
+      if (now - net.lastRx > 4500) linkDown('silence');
+    }, 500);
   }
   function stopHb() { if (net.hb) { clearInterval(net.hb); net.hb = null; } }
 
-  function checkAlive() {
+  function checkAlive(wait) {
     if (!net.conn || !net.conn.open || !net.up) return;
-    var t0 = Date.now();
+    var t0 = Date.now(), c = net.conn;
     netSend({ t: 'ping', n: t0 });
-    setTimeout(function () { if (!net.left && net.up && net.lastRx < t0) linkDown('silence'); }, 3500);
+    setTimeout(function () { if (!net.left && net.up && net.conn === c && net.lastRx < t0) linkDown('silence'); }, wait || 3500);
   }
 
   function detectRoute() {
@@ -1288,7 +1306,7 @@
         }
         break;
       case 'busy':
-        if (net.role === 'guest') { netMsg('Der Raum ist gerade belegt. Ich versuche es gleich noch einmal …'); scheduleReconnect(3000); }
+        if (net.role === 'guest') { netMsg('Der Raum ist gerade belegt. Ich versuche es gleich noch einmal …'); scheduleReconnect(2000); }
         break;
       case 'rej':
         if (net.role === 'guest') { S.gpause = null; save(); leaveLive(false, d.why === 'name' ? 'Dieser Name ist im Raum schon vergeben. Bitte einen anderen Namen wählen.' : 'In diesem Raum läuft schon ein Spiel mit anderen Spielern.'); }
@@ -1340,10 +1358,7 @@
       if (net.peer !== pr || net.left) return;
       var same = net.conn && net.conn.peer === c.peer;
       var alive = net.conn && net.up && (Date.now() - net.lastRx < 8000);
-      if (alive && !same) {
-        c.on('open', function () { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(function () { try { c.close(); } catch (e) {} }, 300); });
-        return;
-      }
+      if (alive && !same) { vetConn(c); return; }
       attachConn(c);
     });
     pr.on('disconnected', function () {
@@ -1354,11 +1369,29 @@
       if (net.peer !== pr || net.left) return;
       if (err && err.type === 'unavailable-id') {
         try { pr.destroy(); } catch (e) {}
-        if (net.resume && attempt < 12) { setTimeout(function () { if (!net.left) startHost(attempt + 1); }, 2500); return; }
+        if (net.resume && attempt < 20) { setTimeout(function () { if (!net.left) startHost(attempt + 1); }, 1500); return; }
         if (!net.resume && attempt < 5) { net.code = randomCode(); startHost(attempt + 1); return; }
       }
       netMsg(errorText(err));
     });
+  }
+
+  // Neue Verbindung, obwohl die alte noch lebendig aussieht: Meldet sich derselbe Name wie Handy 2
+  // (z. B. App neu geöffnet), wird sofort übernommen. Sonst bekommt sie „belegt“.
+  function vetConn(c) {
+    var done = false;
+    function busy() { try { c.send({ t: 'busy' }); } catch (e) {} setTimeout(function () { try { c.close(); } catch (e) {} }, 300); }
+    function finish(d) {
+      if (done) return; done = true;
+      var ok = !net.left && L && L.names[1] && d && d.t === 'hi' && bilanzKey(cleanName(d.name)) === bilanzKey(L.names[1]);
+      if (!ok) { busy(); return; }
+      dbg('Neue Verbindung von ' + L.names[1] + ' übernommen');
+      attachConn(c);
+      onNetData(d);
+    }
+    c.on('data', finish);
+    c.on('close', function () { done = true; });
+    setTimeout(function () { if (!done) { done = true; busy(); } }, 4000);
   }
 
   // ── Beitreten (Handy 2) ────────────────────────────────────────────────────
@@ -1386,13 +1419,14 @@
     });
     pr.on('disconnected', function () {
       if (net.peer !== pr || net.left) return;
-      scheduleReconnect(1000);
+      kickReconnect(300);
     });
     pr.on('error', function (err) {
       if (net.peer !== pr || net.left) return;
       if (err && err.type === 'peer-unavailable') {
         if (!net.up) netMsg('Raum ' + net.code + ' nicht gefunden. Läuft Handy 1 schon? Ich versuche es weiter …');
-        scheduleReconnect(3000);
+        dropPending();
+        scheduleReconnect(1500);
         return;
       }
       if (!net.up) netMsg(errorText(err));
@@ -1406,16 +1440,33 @@
     attachConn(net.peer.connect(APP_PREFIX + net.code, { reliable: true, serialization: 'json' }));
   }
 
+  // Ein gescheiterter Verbindungsversuch (Raum nicht da) soll den nächsten Versuch nicht blockieren
+  function dropPending() {
+    var c = net.conn;
+    if (c && !c.open && !c._was) { net.conn = null; try { c.close(); } catch (e) {} }
+  }
+
+  // Erst schnell nachfragen (Handy 1 öffnet den Raum meist binnen Sekunden), später gemächlicher
+  function rcDelay() { return net.rcTries < 12 ? 1500 : 3000; }
+
   function scheduleReconnect(delay) {
     if (net.role !== 'guest' || net.rc || net.left) return;
     net.rc = setTimeout(function () {
       net.rc = null;
       if (net.left || (net.conn && net.conn.open && net.up)) { net.rcTries = 0; return; }
-      if (net.rcTries >= 25) { netMsg('Keine Verbindung mehr. Bitte „Beenden“ tippen und neu beitreten.'); return; }
+      if (net.rcTries >= 33) { netMsg('Keine Verbindung mehr. Bitte „Beenden“ tippen und neu beitreten.'); return; }
       net.rcTries++;
       doReconnect();
-      scheduleReconnect(3000);
+      scheduleReconnect(rcDelay());
     }, delay);
+  }
+
+  // Sofort neu versuchen (Aufwachen, Netz zurück, Verbindung weg): laufenden Wartetimer ersetzen
+  function kickReconnect(delay) {
+    if (net.role !== 'guest' || net.left) return;
+    if (net.rc) { clearTimeout(net.rc); net.rc = null; }
+    net.rcTries = 0;
+    scheduleReconnect(delay);
   }
 
   function doReconnect() {
@@ -1425,16 +1476,24 @@
     connectToHost();
   }
 
-  document.addEventListener('visibilitychange', function () {
+  // Aufwachen (Sperrbildschirm, App-Wechsel) oder Netz zurück: Verbindung prüfen bzw. sofort neu aufbauen
+  var hiddenAt = 0;
+  function wakeCheck(away) {
     if (!net.role || net.left) return;
-    if (document.visibilityState !== 'visible') return;
-    setTimeout(function () {
-      if (net.left) return;
-      if (net.conn && net.conn.open && net.up) { checkAlive(); requestWake(); }
-      else if (net.role === 'guest') scheduleReconnect(300);
-      if (net.peer && net.peer.disconnected) { try { net.peer.reconnect(); } catch (e) {} }
-    }, 800);
+    if (net.peer && net.peer.disconnected) { try { net.peer.reconnect(); } catch (e) {} }
+    if (net.conn && net.conn.open && net.up) {
+      requestWake();
+      // Lange weg: Die Verbindung ist fast sicher tot, nicht erst auf die Antwort warten
+      if (away > 20000 && net.role === 'guest') { dbg('Lange weg (' + Math.round(away / 1000) + ' s): verbinde neu'); linkDown('wake'); }
+      else checkAlive(1500);
+    } else if (net.role === 'guest') kickReconnect(100);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') { hiddenAt = Date.now(); return; }
+    var away = hiddenAt ? Date.now() - hiddenAt : 0; hiddenAt = 0;
+    setTimeout(function () { wakeCheck(away); }, 300);
   });
+  window.addEventListener('online', function () { dbg('Netz wieder da'); setTimeout(function () { wakeCheck(0); }, 300); });
 
   function leaveLive(tell, text, how) {
     net.left = true;
