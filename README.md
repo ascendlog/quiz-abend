@@ -38,12 +38,22 @@ Fragen über euch beide, ohne Zeitdruck. Start: „Paarabend – zwei Handys“,
 - Wertung: „Gegeneinander“ (Punkte, einer liegt vorn) oder „Gemeinsam“ (alle Treffer zählen zusammen). Bei „Tief“ ist „Gemeinsam“ voreingestellt.
 - Jede Frage lässt sich überspringen. Am Ende gibt es Impulse zum Weiterreden und einen Rückblick mit allen Antworten.
 - Es zählt immer die Fragenliste von Handy 1. Der Paarabend fließt nicht in die Bilanz des Wissensspiels ein.
-- Eigene Paarfragen („Eigene Paarfragen“ auf dem Startbildschirm): Freitext oder Auswahl, mit Stufe. Sie bleiben nur lokal auf dem Handy und werden nicht ins Repo geschrieben. Import ebenfalls über „Importieren“ (JSON mit `paarfragen`-Liste im Format von `paarfragen.json`), „Sichern“ exportiert sie mit.
+- Eigene Paarfragen („Eigene Paarfragen“ auf dem Startbildschirm): Freitext oder Auswahl, mit Stufe. Sie bleiben nur lokal auf dem Handy und werden nicht ins Repo geschrieben. Import ebenfalls über „Importieren“ (JSON mit `paarfragen`-Liste im Format von `paarfragen.json`), Die Sicherung enthält sie ebenfalls.
 
 ## Eigene Wissensfragen
 
-Über „Importieren“ auf dem Startbildschirm lassen sich weitere Fragen als JSON-Datei laden. Sie bleiben nur lokal im Browser des Handys gespeichert (nicht im öffentlichen Repo). Im Zwei-Handy-Modus zählen die Fragen von Handy 1. Format wie in `fragen.json`. „Sichern“ exportiert importierte Fragen und die Bilanz.
+Über „Importieren“ auf dem Startbildschirm lassen sich weitere Fragen als JSON-Datei laden. Sie bleiben nur lokal im Browser des Handys gespeichert (nicht im öffentlichen Repo). Im Zwei-Handy-Modus zählen die Fragen von Handy 1. Format wie in `fragen.json`. Eine Sicherung (siehe unten) lässt sich auf demselben Weg wieder einspielen.
+
+## Sicherung und Wiederherstellung
+
+Startbildschirm → „Sicherung“. Eine Sicherung enthält eigene Wissensfragen, eigene Paarfragen, die Bilanz, Namen und welche Fragen schon gestellt wurden.
+
+- „Sicherung speichern / teilen“ öffnet auf dem iPhone das Teilen-Menü (z. B. „In Dateien sichern“ oder an sich selbst schicken). Ohne Teilen-Menü wird eine Datei heruntergeladen.
+- „Als Text kopieren“ legt die Sicherung in die Zwischenablage, z. B. zum Einfügen in eine Notiz.
+- „Wiederherstellen“ per Datei oder eingefügtem Text ergänzt Fehlendes. Vorhandene Fragen und Namen bleiben unverändert, die Bilanz wird übernommen, wenn sie mehr Spiele enthält.
+- Auf dem Startbildschirm steht, wann zuletzt gesichert wurde. Nach 30 Tagen kommt ein Hinweis.
+- Der „Verbindungstest“ hat oben und unten einen Link zurück zur App.
 
 ## Hinweis zum Speicher
 
-Safari und die Home-Bildschirm-App haben getrennten Speicher. Am besten immer nur über das Home-Bildschirm-Symbol spielen und gelegentlich „Sichern“ nutzen.
+Safari und die Home-Bildschirm-App haben getrennten Speicher. Am besten immer nur über das Home-Bildschirm-Symbol spielen und gelegentlich eine Sicherung erstellen (Startbildschirm → „Sicherung“).

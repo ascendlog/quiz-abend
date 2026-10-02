@@ -123,6 +123,8 @@
   .test .label { color: var(--accent); }
   .test p { font-size: 13px; color: #633806; line-height: 1.6; }
 
+  .back { display: inline-block; font-size: 14px; color: var(--ink-soft); padding: 8px 0 14px; text-decoration: underline; }
+  .back.bottom { display: block; text-align: center; padding: 18px 0 8px; }
   details { margin-bottom: 14px; }
   summary { font-size: 13px; color: var(--ink-soft); padding: 8px 0; cursor: pointer; }
   pre {
@@ -138,6 +140,7 @@
 <div class="wrap">
   <div class="logo">Quiz-Abend</div>
   <div class="sub">Verbindungstest</div>
+  <a class="back" href="index.html">← Zurück zur App</a>
 
   <section id="vStart">
     <p class="lead">Dieser Test prüft, ob sich zwei iPhones im Heim-WLAN zuverlässig verbinden. Beide Handys öffnen diese Seite.</p>
@@ -192,6 +195,7 @@
     <button class="btn" id="btnCopy">Protokoll kopieren</button>
     <button class="btn ghost" id="btnLeave">Beenden</button>
   </section>
+  <a class="back bottom" href="index.html">← Zurück zur App</a>
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>

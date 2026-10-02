@@ -208,7 +208,7 @@
 </head>
 <body>
 <div class="wrap" id="app"><p class="lead">Lade Fragen …</p></div>
-<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<input type="file" id="fileIn" accept=".json,application/json,text/plain" hidden>
 
 <script>
 (function () {
@@ -272,6 +272,7 @@
       pseen: Array.isArray(s.pseen) ? s.pseen : [],
       psettings: Object.assign({}, PDEFAULTS, s.psettings || {}),
       myName: typeof s.myName === 'string' ? s.myName : '',
+      lastBackup: typeof s.lastBackup === 'string' ? s.lastBackup : '',
       lastCode: typeof s.lastCode === 'string' ? s.lastCode : '',
       live: s.live && s.live.L ? s.live : null,
       settings: Object.assign({}, DEFAULTS, st, { types: Object.assign({}, DEFAULTS.types, st.types || {}) }),
@@ -635,6 +636,7 @@
     else if (view === 'lmenu') node = viewLiveMenu();
     else if (view === 'psetup') node = viewPSetup();
     else if (view === 'pmanage') node = viewPManage();
+    else if (view === 'backup') node = viewBackup();
     else if (view === 'play') node = viewPlay();
     else node = viewResult();
     app.replaceChildren(node);
@@ -698,9 +700,10 @@
         el('div', { class: 'label', text: 'Fragen' }),
         el('div', { class: 'info', text: total + ' Fragen im Spiel' + (S.imported.length ? ' (davon ' + S.imported.length + ' importiert)' : '') + '.' }),
         el('div', { class: 'info', text: 'Paarfragen: ' + (base.paar || []).length + ' Vorschläge, ' + S.pq.length + ' eigene.' }),
+        hasOwnData() ? el('div', { class: 'hint' + (backupAgeDays() > 30 ? ' warn' : ''), style: 'margin:0 0 12px', text: S.lastBackup ? 'Letzte Sicherung: ' + fmtDay(S.lastBackup) + (backupAgeDays() > 30 ? ' – Zeit für eine neue.' : '.') : 'Eigene Fragen noch nicht gesichert.' }) : null,
         el('div', { class: 'btnrow' },
           el('button', { class: 'btn small', text: 'Importieren', onclick: function () { document.getElementById('fileIn').click(); } }),
-          el('button', { class: 'btn small', text: 'Sichern', onclick: exportBackup }))),
+          el('button', { class: 'btn small', text: 'Sicherung', onclick: function () { notice = ''; go('backup'); } }))),
       el('div', { class: 'center' }, el('a', { class: 'linkbtn', href: 'verbindungstest.html', text: 'Verbindungstest' })));
   }
 
@@ -938,70 +941,103 @@
   }
 
   // ── Import und Sicherung ───────────────────────────────────────────────────
+  // Gemeinsamer Weg fuer Dateien und eingefuegten Text. Gibt den Hinweistext zurueck.
+  function applyImport(text, what) {
+    try {
+      var d = JSON.parse(text);
+      var list = Array.isArray(d) ? d : (d && Array.isArray(d.fragen) ? d.fragen : null);
+      var plist = d && Array.isArray(d.paarfragen) ? d.paarfragen.slice() : [];
+      if (list) {
+        var wl = [];
+        list.forEach(function (x) { if (x && (x.typ === 'frei' || x.typ === 'wahl')) plist.push(x); else wl.push(x); });
+        list = wl;
+      }
+      if (!list && !plist.length && !(d && d.bilanz)) throw new Error('Format');
+      var ids = {}; allQuestions().forEach(function (q) { ids[q.id] = 1; });
+      var added = 0, skipped = 0, dup = 0;
+      (list || []).forEach(function (raw) {
+        var q = cleanQ(raw);
+        if (!q) { skipped++; return; }
+        if (ids[q.id]) { dup++; return; }
+        ids[q.id] = 1; S.imported.push(q); added++;
+      });
+      if (d && d.kategorien && typeof d.kategorien === 'object') {
+        Object.keys(d.kategorien).forEach(function (k) { if (!base.kategorien[k]) S.catLabels[k] = String(d.kategorien[k]); });
+      }
+      var pAdded = 0;
+      var pids = {}; (base.paar || []).concat(S.pq).forEach(function (q) { pids[q.id] = 1; });
+      plist.forEach(function (raw) {
+        var q = cleanPQ(raw);
+        if (!q) { skipped++; return; }
+        if (pids[q.id]) { dup++; return; }
+        pids[q.id] = 1; S.pq.push(q); pAdded++;
+      });
+      var bil = 0;
+      if (d && d.bilanz && typeof d.bilanz === 'object') {
+        Object.keys(d.bilanz).forEach(function (k) {
+          var r = d.bilanz[k];
+          if (r && typeof r.games === 'number' && typeof r.wins === 'number' && (!S.bilanz[k] || r.games > S.bilanz[k].games)) { S.bilanz[k] = { name: String(r.name || k), wins: r.wins, games: r.games }; bil++; }
+        });
+      }
+      // Namen und „schon gestellte Fragen“ (nur aus Sicherungen ab Version 2)
+      var extra = false;
+      if (d && !Array.isArray(d) && Number(d.version) >= 2) {
+        if (Array.isArray(d.names) && !S.names[0] && !S.names[1] && (d.names[0] || d.names[1])) { S.names = [cleanName(d.names[0]), cleanName(d.names[1])]; extra = true; }
+        if (typeof d.myName === 'string' && !S.myName && cleanName(d.myName)) { S.myName = cleanName(d.myName); extra = true; }
+        [['seen', 'seen'], ['pseen', 'pseen']].forEach(function (p) {
+          if (!Array.isArray(d[p[0]])) return;
+          d[p[0]].forEach(function (id) { if (typeof id === 'string' && S[p[1]].indexOf(id) < 0 && S[p[1]].length < 600) S[p[1]].push(id); });
+        });
+      }
+      save();
+      var parts = [];
+      if (added || (!pAdded && !bil)) parts.push(added + (added === 1 ? ' neue Frage importiert' : ' neue Fragen importiert'));
+      if (pAdded) parts.push(pAdded + (pAdded === 1 ? ' Paarfrage' : ' Paarfragen'));
+      if (dup) parts.push(dup + ' schon vorhanden');
+      if (skipped) parts.push(skipped + ' ungültig');
+      if (bil) parts.push('Bilanz übernommen');
+      if (extra) parts.push('Namen übernommen');
+      return parts.join(', ') + '.';
+    } catch (e) {
+      return what === 'Text' ? 'Der Text konnte nicht gelesen werden. Bitte die ganze Sicherung einfügen.' : 'Die Datei konnte nicht gelesen werden.';
+    }
+  }
+
   document.getElementById('fileIn').addEventListener('change', function () {
     var f = this.files && this.files[0]; this.value = '';
     if (!f) return;
     var rd = new FileReader();
     rd.onload = function () {
-      try {
-        var d = JSON.parse(rd.result);
-        var list = Array.isArray(d) ? d : (d && Array.isArray(d.fragen) ? d.fragen : null);
-        var plist = d && Array.isArray(d.paarfragen) ? d.paarfragen : [];
-        if (list) {
-          var wl = [];
-          list.forEach(function (x) { if (x && (x.typ === 'frei' || x.typ === 'wahl')) plist.push(x); else wl.push(x); });
-          list = wl;
-        }
-        if (!list && !plist.length && !(d && d.bilanz)) throw new Error('Format');
-        var ids = {}; allQuestions().forEach(function (q) { ids[q.id] = 1; });
-        var added = 0, skipped = 0, dup = 0;
-        (list || []).forEach(function (raw) {
-          var q = cleanQ(raw);
-          if (!q) { skipped++; return; }
-          if (ids[q.id]) { dup++; return; }
-          ids[q.id] = 1; S.imported.push(q); added++;
-        });
-        if (d && d.kategorien && typeof d.kategorien === 'object') {
-          Object.keys(d.kategorien).forEach(function (k) { if (!base.kategorien[k]) S.catLabels[k] = String(d.kategorien[k]); });
-        }
-        var pAdded = 0;
-        var pids = {}; (base.paar || []).concat(S.pq).forEach(function (q) { pids[q.id] = 1; });
-        plist.forEach(function (raw) {
-          var q = cleanPQ(raw);
-          if (!q) { skipped++; return; }
-          if (pids[q.id]) { dup++; return; }
-          pids[q.id] = 1; S.pq.push(q); pAdded++;
-        });
-        var bil = 0;
-        if (d && d.bilanz && typeof d.bilanz === 'object') {
-          Object.keys(d.bilanz).forEach(function (k) {
-            var r = d.bilanz[k];
-            if (r && typeof r.games === 'number' && typeof r.wins === 'number' && (!S.bilanz[k] || r.games > S.bilanz[k].games)) { S.bilanz[k] = { name: String(r.name || k), wins: r.wins, games: r.games }; bil++; }
-          });
-        }
-        save();
-        var parts = [added + ' neue Fragen importiert'];
-        if (pAdded) parts.push(pAdded + ' Paarfragen');
-        if (dup) parts.push(dup + ' schon vorhanden');
-        if (skipped) parts.push(skipped + ' ungültig');
-        if (bil) parts.push('Bilanz übernommen');
-        notice = parts.join(', ') + '.';
-      } catch (e) {
-        notice = 'Die Datei konnte nicht gelesen werden.';
-      }
-      go('home');
+      notice = applyImport(String(rd.result), 'Datei');
+      go(view === 'backup' ? 'backup' : 'home');
     };
+    rd.onerror = function () { notice = 'Die Datei konnte nicht gelesen werden.'; go(view === 'backup' ? 'backup' : 'home'); };
     rd.readAsText(f);
   });
 
+  function backupJson() {
+    return JSON.stringify({
+      version: 2, name: 'Quiz-Abend Sicherung', exported: new Date().toISOString(),
+      kategorien: S.catLabels, fragen: S.imported, paarfragen: S.pq, bilanz: S.bilanz,
+      names: S.names, myName: S.myName, seen: S.seen.slice(-400), pseen: S.pseen.slice(-400)
+    }, null, 2);
+  }
+
+  function markBackup(msg) {
+    S.lastBackup = new Date().toISOString(); save();
+    notice = msg;
+    if (view === 'backup' || view === 'home') render();
+  }
+
   function exportBackup() {
-    var data = { version: 1, name: 'Quiz-Abend Sicherung', exported: new Date().toISOString(), kategorien: S.catLabels, fragen: S.imported, paarfragen: S.pq, bilanz: S.bilanz };
-    var json = JSON.stringify(data, null, 2);
-    var fname = 'quiz-abend-sicherung.json';
+    var json = backupJson();
+    var fname = 'quiz-abend-sicherung-' + new Date().toISOString().slice(0, 10) + '.json';
     try {
       var file = new File([json], fname, { type: 'application/json' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file] }).catch(function () {});
+        navigator.share({ files: [file], title: 'Quiz-Abend Sicherung' })
+          .then(function () { markBackup('Sicherung erstellt. Bewahre die Datei sicher auf, zum Beispiel in „Dateien“.'); })
+          .catch(function () {});
         return;
       }
     } catch (e) {}
@@ -1010,6 +1046,53 @@
     var a = document.createElement('a'); a.href = url; a.download = fname;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    markBackup('Sicherung erstellt (Datei ' + fname + ').');
+  }
+
+  function copyBackup() {
+    var json = backupJson();
+    function fail() { notice = 'Kopieren ist hier nicht möglich. Bitte „Sicherung speichern / teilen“ benutzen.'; render(); }
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) return fail();
+      navigator.clipboard.writeText(json)
+        .then(function () { markBackup('Sicherung kopiert. Füge sie jetzt zum Beispiel in eine Notiz ein und bewahre sie dort auf.'); })
+        .catch(fail);
+    } catch (e) { fail(); }
+  }
+
+  function fmtDay(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  function hasOwnData() { return !!(S.imported.length || S.pq.length || Object.keys(S.bilanz).length); }
+  function backupAgeDays() { return S.lastBackup ? (Date.now() - new Date(S.lastBackup).getTime()) / 86400000 : Infinity; }
+
+  function viewBackup() {
+    var nb = Object.keys(S.bilanz).length;
+    var inhalt = S.imported.length + ' eigene Wissensfragen · ' + S.pq.length + ' eigene Paarfragen · ' + (nb ? 'Bilanz (' + nb + (nb === 1 ? ' Person' : ' Personen') + ')' : 'keine Bilanz');
+    var ta = el('textarea', { id: 'bk-paste', rows: '4', placeholder: 'Kopierte Sicherung hier einfügen …' });
+    return el('div', null,
+      el('div', { class: 'topbar' }, header('Sicherung'), el('button', { class: 'linkbtn', text: 'Zurück', onclick: function () { notice = ''; go('home'); } })),
+      notice ? el('div', { class: 'notice', text: notice }) : null,
+      el('p', { class: 'lead', text: 'Eigene Fragen, Bilanz und Namen liegen nur auf diesem Handy. Safari und die Home-Bildschirm-App haben sogar getrennte Speicher. Mit einer Sicherung geht nichts verloren, auch wenn die App neu installiert wird.' }),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Sicherung erstellen' }),
+        el('div', { class: 'info', text: 'Enthält: ' + inhalt + '.' }),
+        el('div', { class: 'info', id: 'bk-last', text: S.lastBackup ? 'Letzte Sicherung: ' + fmtDay(S.lastBackup) : 'Noch nie gesichert.' }),
+        el('button', { class: 'btn primary', text: 'Sicherung speichern / teilen', onclick: exportBackup }),
+        el('button', { class: 'btn', text: 'Als Text kopieren', onclick: copyBackup }),
+        el('div', { class: 'hint', text: 'Auf dem iPhone öffnet sich das Teilen-Menü. Dort „In Dateien sichern“ wählen oder die Datei an dich selbst schicken.' })),
+      el('div', { class: 'card' },
+        el('div', { class: 'label', text: 'Wiederherstellen' }),
+        el('div', { class: 'info', text: 'Fehlendes wird ergänzt. Vorhandene Fragen bleiben unverändert.' }),
+        el('button', { class: 'btn', text: 'Datei auswählen', onclick: function () { document.getElementById('fileIn').click(); } }),
+        el('div', { class: 'label', style: 'margin-top:16px', text: 'Oder Text einfügen' }),
+        ta,
+        el('button', { class: 'btn', text: 'Aus Text wiederherstellen', onclick: function () {
+          if (!ta.value.trim()) { notice = 'Bitte zuerst die kopierte Sicherung einfügen.'; render(); return; }
+          notice = applyImport(ta.value, 'Text'); render();
+        } })));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
