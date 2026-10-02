@@ -2022,6 +2022,35 @@
       liveLeaveBtn('Abbrechen'));
   }
 
+  // Einladung: fertige Nachricht ueber das Teilen-Menue (iMessage, WhatsApp ...), damit Handy 2 eine normale Benachrichtigung bekommt
+  function inviteText(v) {
+    var who = cleanName(v.names[0]) || 'Handy 1';
+    var entry = v.kind === 'paar' ? 'Paarabend – zwei Handys' : 'Zwei Handys – gleichzeitig';
+    return who + ' hat im Quiz-Abend einen Raum geöffnet.\nCode: ' + net.code + '\n\nIn der App „' + entry + '“ antippen, dann unter „Handy 2 – Spiel beitreten“ den Code eingeben.';
+  }
+  function inviteShare(v) {
+    var text = inviteText(v);
+    function hint(t) { var h = document.getElementById('inviteHint'); if (h) h.textContent = t; }
+    function manual() { hint('Teilen ist hier nicht möglich. Sag Handy 2 bitte den Code ' + net.code + '.'); }
+    function copy() {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { hint('Text kopiert. Füge ihn in eine Nachricht an Handy 2 ein.'); }).catch(manual);
+          return;
+        }
+      } catch (e) {}
+      manual();
+    }
+    try {
+      if (navigator.share) {
+        navigator.share({ text: text }).then(function () { hint('Einladung verschickt. Sobald Handy 2 beitritt, geht es hier weiter.'); })
+          .catch(function (e) { if (!e || e.name !== 'AbortError') copy(); });
+        return;
+      }
+    } catch (e) {}
+    copy();
+  }
+
   function viewLiveLobby(v) {
     var host = net.role === 'host';
     var other = v.names[1 - v.me];
@@ -2031,6 +2060,9 @@
       el('div', { class: 'codebig', text: net.code }),
       el('div', { class: 'info', style: 'margin:0', id: 'lmsg', text: connected ? other + ' ist verbunden.' + (net.route ? ' (' + net.route + ')' : '') : net.msg }));
     var parts = [header('Zwei Handys'), notice ? el('div', { class: 'notice', text: notice }) : null, head];
+    if (host && !connected) parts.push(
+      el('button', { class: 'btn', id: 'inviteBtn', text: 'Handy 2 per Nachricht einladen', onclick: function () { inviteShare(v); } }),
+      el('div', { class: 'hint center', id: 'inviteHint', style: 'margin:-6px 0 14px' }));
     if (connected) {
       parts.push(el('div', { class: 'card' }, el('div', { class: 'label', text: 'Spiel' }), liveRows(v.set)));
       if (host) parts.push(el('button', { class: 'btn primary', text: 'Spiel starten', onclick: function () {

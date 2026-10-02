@@ -25,6 +25,7 @@ Quizspiel für zwei – gedacht für einen Spieleabend zu zweit, läuft als Web-
 
 - Handy 1: „Zwei Handys“ → Name → „Raum erstellen“ → Einstellungen wählen → vierstelliger Code erscheint.
 - Handy 2: „Zwei Handys“ → Name → Code eingeben → „Beitreten“. Dann startet Handy 1 das Spiel.
+- Solange Handy 2 noch nicht verbunden ist, gibt es auf Handy 1 den Knopf „Handy 2 per Nachricht einladen“. Er öffnet das Teilen-Menü mit fertigem Text und Code (iMessage, WhatsApp …). Handy 2 bekommt so eine normale Benachrichtigung, auch bei gesperrtem Bildschirm. Eine echte Push-Benachrichtigung der App selbst bräuchte einen eigenen Server und gibt es nicht.
 - Beide sehen dieselbe Frage und antworten gleichzeitig; der Zeitbonus zählt für jede Person einzeln.
 - 50:50 ist privat (nur auf dem eigenen Handy), „Tauschen“ wechselt die Frage für beide und geht nur, solange noch niemand geantwortet hat.
 - Bricht eine Verbindung ab (z. B. Sperrbildschirm), pausiert die Frage und läuft nach dem automatischen Wiederverbinden weiter. Das dauert meist 2 bis 6 Sekunden: Beim Entsperren prüft die App die Verbindung sofort, nach langer Pause baut sie direkt neu auf. Öffnet Handy 2 die App neu und tritt mit demselben Namen wieder bei, übernimmt Handy 1 die neue Verbindung sofort. Ein anderer Name bekommt weiter „Raum belegt“.
