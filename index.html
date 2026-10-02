@@ -1713,6 +1713,10 @@
         L.ans[p] = { v: g, left: left };
       } else return;
       if (L.ans[0] && L.ans[1]) lResolve(); else lPush();
+    } else if (a === 'undo') {
+      // Antwort zurueckziehen: nur solange der Gegner noch nicht geantwortet hat und die Zeit laeuft
+      if (L.phase === 'ask' && !L.paused && L.ans[p] && !L.ans[p].timeout && !L.ans[1 - p] && Date.now() < L.deadline + 500) L.ans[p] = null;
+      lPush();
     } else if (a === 'fifty') {
       var J = L.jokers[p];
       if (L.phase !== 'ask' || L.paused || q.typ !== 'mc' || J.fifty < 1 || L.ans[p] || L.hidden[p].length) return;
@@ -1851,7 +1855,7 @@
   // Wird auf beiden Handys aufgerufen, sobald ein neues Ansichtsmodell vorliegt.
   function localApply(v) {
     LV = v;
-    if (v.qk !== lui.qk) { lui.qk = v.qk; lui.sent = false; lui.pick = null; lui.draft = ''; lui.guess = null; lui.lastAct = null; }
+    if (v.qk !== lui.qk) { lui.qk = v.qk; lui.sent = false; lui.pick = null; lui.draft = ''; lui.guess = null; lui.lastAct = null; lui.rejudge = false; }
     if (lui.awaitSync) { lui.awaitSync = false; lui.sent = !!v.my; }
     if (v.kind === 'paar' && net.role === 'guest' && net.up && lui.sent && !v.my && lui.lastAct && (v.phase === 'pself' || v.phase === 'pguess') && Date.now() - lui.lastAct.at > 2500) {
       lui.lastAct.at = Date.now(); netSend(lui.lastAct.m);
@@ -1883,6 +1887,7 @@
     lPaintTimer();
     if (lui.left <= 0) {
       lStopTimer();
+      var ub = document.getElementById('undoBtn'); if (ub) ub.remove();
       if (!(v.my || lui.sent)) { lui.sent = true; lSend({ a: 'timeout' }); }
     }
   }
@@ -1904,6 +1909,23 @@
     return ok;
   }
   function canAct(v) { return v.phase === 'ask' && !v.paused && !(v.my || lui.sent) && (net.role === 'host' || net.up); }
+  // Antwort ändern: nur solange das andere Handy noch nicht geantwortet hat und noch Zeit ist
+  function canUndo(v) {
+    if (!v || v.phase !== 'ask' || v.paused || v.oppDone || !(v.my || lui.sent)) return false;
+    if (v.my && v.my.timeout) return false;
+    if (!(net.role === 'host' || net.up)) return false;
+    return lui.endsAt - Date.now() > 1000;
+  }
+  function lUndo() {
+    var v = LV; if (!v || !canUndo(v)) return;
+    var q = v.q, old = v.my ? v.my.v : (q.typ === 'est' ? lui.guess : lui.pick);
+    lui.sent = false; lui.pick = null; lui.guess = null;
+    if (q.typ === 'est') lui.draft = (old === null || old === undefined) ? '' : String(old).replace('.', ',');
+    v.my = null;
+    lSend({ a: 'undo' });
+    renderLive();
+  }
+  function undoBtn() { return el('button', { class: 'btn small', id: 'undoBtn', style: 'margin-top:10px', text: 'Antwort ändern', onclick: lUndo }); }
   function lAnswer(i) {
     var v = LV; if (!v || !canAct(v)) return;
     var left = Math.max(0, Math.round(lui.endsAt - Date.now()));
@@ -2140,6 +2162,7 @@
       if (answered) {
         var val = v.my ? v.my.v : lui.guess;
         card.append(el('div', { class: 'info', text: 'Deine Schätzung: ' + (val === null || val === undefined ? 'keine Antwort' : fmt(val) + unit) }));
+        if (canUndo(v)) card.append(undoBtn());
       } else {
         var err = el('div', { class: 'errtext', id: 'lerr', text: '' });
         var submit = function () {
@@ -2155,6 +2178,7 @@
       }
     } else {
       card.append(liveAnswers(v, false));
+      if (answered && canUndo(v)) card.append(undoBtn());
       var J = v.jk;
       card.append(el('div', { class: 'jokers' },
         el('button', { class: 'btn small', text: '50:50 (' + J.fifty + ')',
@@ -2221,7 +2245,7 @@
     var v = LV;
     if (!v) return 'conn|' + net.msg + '|' + (net.up ? 1 : 0);
     return [v.phase, v.qk, v.my ? 1 : 0, lui.sent ? 1 : 0, v.paused ? 1 : 0, net.up ? 1 : 0, v.hidden.join(''), v.jk.fifty, v.jk.swap,
-      v.canSwap ? 1 : 0, v.ready.join(''), v.scores.join(','), v.names.join('/'), net.msg, net.route, notice, v.sig || '', lui.pick].join('|');
+      v.canSwap ? 1 : 0, v.ready.join(''), v.scores.join(','), v.names.join('/'), net.msg, net.route, notice, v.sig || '', lui.pick, lui.rejudge ? 1 : 0, canUndo(v) ? 1 : 0].join('|');
   }
 
   function renderLive() {
@@ -2401,8 +2425,14 @@
       L.guess[p] = g;
       if (L.guess[0] !== null && L.guess[1] !== null) pEnterReveal();
       lPush();
+    } else if (a === 'pundo') {
+      // Eigene Antwort/Tipp zurueckziehen: geht nur, solange die Phase noch laeuft (der Partner also noch nicht fertig ist)
+      if (L.phase === 'pself' && L.self[p] !== null) L.self[p] = null;
+      else if (L.phase === 'pguess' && L.guess[p] !== null) L.guess[p] = null;
+      lPush();
     } else if (a === 'pjudge') {
-      if (L.phase !== 'preveal' || L.jd[p] !== null) return;
+      // Bewertung darf geaendert werden, bis man selbst auf „Weiter“ getippt hat (bei Auswahlfragen wertet die App selbst)
+      if (L.phase !== 'preveal' || L.ready[p] || q.typ === 'wahl') return;
       var okv = st.pmode === 'aehnlich' ? ['G', 'V'] : ['T', 'F', 'D'];
       if (okv.indexOf(m.v) < 0) return;
       L.jd[p] = m.v;
@@ -2535,6 +2565,16 @@
     renderLive();
   }
 
+  function pUndo() {
+    var v = LV; if (!v || (v.phase !== 'pself' && v.phase !== 'pguess')) return;
+    var val = v.my ? v.my.v : lui.val;
+    lui.sent = false; lui.lastAct = null;
+    if (v.q.opts) lui.pick = (val === null || val === undefined) ? null : val; else lui.draft = (val === null || val === undefined) ? '' : String(val);
+    v.my = null;
+    lSend({ a: 'pundo' });
+    renderLive();
+  }
+
   function pInput(v) {
     var q = v.q, opp = 1 - v.me, oppName = v.names[opp], guessing = v.phase === 'pguess', kennt = v.pm === 'kennt';
     var done = !!(v.my || lui.sent), can = pCan(), kind = guessing ? 'pguess' : 'pself', box;
@@ -2556,6 +2596,7 @@
     if (done) {
       var val = v.my ? v.my.v : lui.val;
       card.append(el('div', { class: 'info', text: (guessing ? 'Dein Tipp: ' : 'Deine Antwort: ') + (q.opts ? q.opts[val] : val) }));
+      card.append(el('button', { class: 'btn small', id: 'undoBtn', text: guessing ? 'Tipp ändern' : 'Antwort ändern', disabled: !can, onclick: pUndo }));
     } else if (q.opts) {
       card.append(el('div', { class: 'answers' }, q.opts.map(function (txt, d) {
         return el('button', { class: 'ans' + (lui.pick === d ? ' picked' : ''), disabled: !can, onclick: function () { lui.pick = d; renderLive(); } },
@@ -2576,22 +2617,27 @@
       el('button', { class: 'btn ghost', text: 'Frage überspringen', disabled: !can, onclick: function () { lSend({ a: 'pskip' }); } }));
   }
 
-  function judgeButtons(labels, name, who) {
+  function judgeButtons(labels, name, cur) {
     return el('div', null,
       el('div', { class: 'info', style: 'margin:12px 0 8px', text: name }),
       el('div', { class: 'btnrow' }, labels.map(function (k) {
-        return el('button', { class: 'btn small', disabled: !pCan(), text: JD_LABEL[k], onclick: function () { lSend({ a: 'pjudge', v: k }); } });
+        return el('button', { class: 'btn small' + (k === cur ? ' primary' : ''), disabled: !pCan(), text: JD_LABEL[k], onclick: function () { lui.rejudge = false; lSend({ a: 'pjudge', v: k }); renderLive(); } });
       })));
+  }
+  function rejudgeLink(v) {
+    return el('button', { class: 'linkbtn', id: 'rejudgeBtn', style: 'margin-top:6px', text: 'Bewertung ändern', onclick: function () { lui.rejudge = true; renderLive(); } });
   }
 
   function pReveal(v) {
     var q = v.q, rv = v.rv, me = v.me, opp = 1 - me, names = v.names, kennt = v.pm === 'kennt';
     var jme = rv.jd[me], jop = rv.jd[opp], both = jme !== null && jop !== null;
     var auto = !!q.opts;
+    var mine = jme === null || !!lui.rejudge;                 // ich bewerte gerade (neu)
+    var canRe = !auto && !v.ready[me] && jme !== null && !lui.rejudge;
     var card = el('div', { class: 'card' }, el('div', { class: 'meta', text: q.meta }), el('div', { class: 'qtext', text: q.frage }));
     var box = null;
     if (!both) {
-      if (jme === null) box = kennt
+      if (mine) box = kennt
         ? todoBox('Schritt 3 von 3 · Du bist dran', 'Bewerte den Tipp von ' + names[opp], names[opp] + ' hat geraten, was du geantwortet hast. Tippe unten bei „Wie nah lag ' + names[opp] + '?“ auf einen Knopf.')
         : todoBox('Du bist dran', 'Sind eure Antworten ähnlich?', 'Tippe unten auf „Gleich“ oder „Unterschiedlich“.');
       else box = todoBox(kennt ? 'Schritt 3 von 3 · erledigt' : 'Erledigt', 'Deine Bewertung ist gespeichert',
@@ -2601,20 +2647,24 @@
 
     if (kennt) {
       card.append(el('div', { class: 'label', text: 'Über dich' }), row('Deine Antwort', rv.mySelf), row(names[opp] + ' hat geraten', rv.oppGuess));
-      if (jme === null) card.append(judgeButtons(['T', 'F', 'D'], 'Wie nah lag ' + names[opp] + '?'));
-      else card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Deine Bewertung: ' + JD_LABEL[jme] }));
+      if (mine) card.append(judgeButtons(['T', 'F', 'D'], 'Wie nah lag ' + names[opp] + '?', jme));
+      else {
+        card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: 'Deine Bewertung: ' + JD_LABEL[jme] }));
+        if (canRe) card.append(rejudgeLink(v));
+      }
       card.append(el('div', { class: 'label', style: 'margin-top:18px', text: 'Über ' + names[opp] }), row(names[opp] + ' hat geantwortet', rv.oppSelf), row('Du hast geraten', rv.myGuess));
       if (jop === null) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: names[opp] + ' bewertet deinen Tipp noch …' }));
       else card.append(el('div', { class: 'banner ' + (jop === 'T' ? 'good' : (jop === 'F' ? 'neutral' : 'miss')) },
         jop === 'T' ? 'Treffer!' : (jop === 'F' ? 'Fast!' : 'Diesmal daneben'), el('small', { text: '+' + PJ_PTS[jop] + ' Punkte' })));
     } else {
       card.append(row('Du', rv.mySelf), row(names[opp], rv.oppSelf));
-      if (jme === null) card.append(judgeButtons(['G', 'V'], 'Sind eure Antworten ähnlich?'));
+      if (mine) card.append(judgeButtons(['G', 'V'], 'Sind eure Antworten ähnlich?', jme));
       else if (!both) card.append(el('div', { class: 'info', style: 'margin:10px 0 0', text: names[opp] + ' hat noch nicht gewählt …' }));
       else {
         var same = jme === 'G' && jop === 'G';
         card.append(el('div', { class: 'banner ' + (same ? 'good' : 'neutral') }, same ? 'Gleich!' : 'Unterschiedlich', el('small', { text: same ? 'Da seid ihr euch einig.' : 'Spannend – darüber könnt ihr kurz reden.' })));
       }
+      if (canRe) card.append(rejudgeLink(v));
     }
     var btn = null;
     if (both) btn = v.ready[me]
