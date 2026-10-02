@@ -321,7 +321,7 @@
     while (pl.length < 2) pl.push({ name: '', age: pl.length ? 'm' : 'e', team: 0 });
     return { players: pl, mode: f.mode === 'reihum' ? 'reihum' : 'gemeinsam', rounds: Math.min(8, Math.max(1, Math.round(Number(f.rounds)) || 3)),
              teams: !!f.teams, read: ['auto', 'knopf', 'aus'].indexOf(f.read) >= 0 ? f.read : 'auto',
-             voice: typeof f.voice === 'string' ? f.voice.slice(0, 80) : '' };
+             voice: typeof f.voice === 'string' && f.voice ? f.voice.slice(0, 80) : 'rec' };   // rec = aufgenommene Stimme, auto = iPhone automatisch, sonst Name einer iPhone-Stimme
   }
   var S = loadStore();
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }
@@ -2730,7 +2730,9 @@
   // Familienrunde: ein Handy, 2 bis 6 Personen, Fragen nach Altersstufe
   // ═══════════════════════════════════════════════════════════════════════════
   var FG = null;   // laufende Familienrunde
-  var speechOK = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance === 'function';
+  var ttsOK = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance === 'function';
+  var audioOK = typeof window.Audio === 'function';
+  var speechOK = ttsOK || audioOK;   // Vorlesen überhaupt möglich
   var FTYP = { mc: '', tf: 'Wahr oder falsch', tat: 'Mitmachen', fam: 'Familienfrage' };
 
   function cleanFQ(q) {
@@ -2782,12 +2784,13 @@
     var vs = deVoices();
     if (!vs.length) return null;
     var want = S.fam && S.fam.voice;
-    if (want) { var m = vs.filter(function (v) { return v.name === want; })[0]; if (m) return m; }
+    if (want && want !== 'rec' && want !== 'auto') { var m = vs.filter(function (v) { return v.name === want; })[0]; if (m) return m; }
     // Automatisch: nur eine Stimme nehmen, die nicht technisch klingt; sonst Standard des iPhones (über die Sprache)
     return voiceScore(vs[0]) > -50 ? vs[0] : null;
   }
-  function speak(text) {
-    if (!speechOK) return;
+  function speak(text) {   // iPhone-Stimme (Sprachsynthese)
+    stopAudio();
+    if (!ttsOK) return;
     try {
       var syn = window.speechSynthesis; syn.cancel();
       var u = new window.SpeechSynthesisUtterance(plainSpeech(text));
@@ -2797,7 +2800,73 @@
       syn.speak(u);
     } catch (e) {}
   }
-  function stopSpeak() { try { if (speechOK) window.speechSynthesis.cancel(); } catch (e) {} }
+
+  // Aufgenommene Stimme: audio/<Hash des Textes>.mp3, Liste in audio/index.json. Fehlt ein Teil, spricht die iPhone-Stimme.
+  var AUDIO = { set: null, state: 'loading', base: 'audio/' };
+  var chain = { n: 0, el: null };
+  function hashText(t) {   // wie tools/make_audio.py: FNV-1a und djb2 über UTF-16-Zeichen
+    var h1 = 0x811c9dc5, h2 = 5381;
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+      h2 = (Math.imul(h2, 33) + c) >>> 0;
+    }
+    return ('0000000' + h1.toString(16)).slice(-8) + ('0000000' + h2.toString(16)).slice(-8);
+  }
+  function loadAudio() {
+    if (!audioOK || typeof fetch !== 'function') { AUDIO.state = 'fail'; return; }
+    fetch(AUDIO.base + 'index.json').then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+      .then(function (j) {
+        var set = {};
+        (Array.isArray(j.clips) ? j.clips : []).forEach(function (h) { set[h] = 1; });
+        AUDIO.set = set; AUDIO.state = 'ok';
+      }).catch(function () { AUDIO.state = 'fail'; })
+      .then(function () {
+        var a = document.activeElement;
+        if (view === 'fsetup' && !(a && a.tagName === 'INPUT')) render();
+      });
+  }
+  function recReady(parts) {
+    return audioOK && AUDIO.set && S.fam && S.fam.voice === 'rec' && parts.every(function (t) { return AUDIO.set[hashText(t)]; });
+  }
+  function stopAudio() {
+    chain.n++;
+    try { if (chain.el) chain.el.pause(); } catch (e) {}
+  }
+  function playChain(parts) {
+    try { if (ttsOK) window.speechSynthesis.cancel(); } catch (e) {}
+    stopAudio();
+    var my = chain.n, i = 0;
+    try { if (!chain.el) chain.el = new window.Audio(); } catch (e) { speak(parts.join(' ')); return; }
+    var a = chain.el;
+    function fail() { if (my !== chain.n) return; speak(parts.slice(i).join(' ')); }
+    function next() {
+      if (my !== chain.n) return;
+      a.src = AUDIO.base + hashText(parts[i]) + '.mp3';
+      var pr = a.play();
+      if (pr && pr.catch) pr.catch(fail);
+    }
+    a.onended = function () { if (my !== chain.n) return; i++; if (i < parts.length) next(); };
+    a.onerror = fail;
+    next();
+  }
+  function say(parts) {
+    parts = parts.map(plainSpeech).filter(Boolean);
+    if (!parts.length) return;
+    if (recReady(parts)) playChain(parts); else speak(parts.join(' '));
+  }
+  var prefetched = {};
+  function prefetch(parts) {
+    parts = parts.map(plainSpeech).filter(Boolean);
+    if (!recReady(parts) || typeof fetch !== 'function') return;
+    parts.forEach(function (t) {
+      var u = AUDIO.base + hashText(t) + '.mp3';
+      if (prefetched[u]) return;
+      prefetched[u] = 1;
+      try { fetch(u).catch(function () {}); } catch (e) {}
+    });
+  }
+  function stopSpeak() { stopAudio(); try { if (ttsOK) window.speechSynthesis.cancel(); } catch (e) {} }
   function fRelease() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible' && view === 'fplay' && FG) requestWake();
@@ -2862,6 +2931,7 @@
     if (E) it = Object.assign({}, it, { frage: it.frage.replace(/\{Es\}/g, fGen(E)).replace(/\{E\}/g, E) });
     FG.cur = { pi: pi, it: it, E: E, phase: phase || 'ready', chosen: null, ok: null,
                order: it.typ === 'mc' ? shuffle(it.antworten.map(function (a, i) { return i; })) : [] };
+    fPrefetch();
   }
 
   function fPersist() { if (FG) { S.fgame = clone(FG); save(); } }
@@ -2880,7 +2950,7 @@
 
   function fResume() {
     if (!S.fgame || !S.fgame.cur) return;
-    FG = clone(S.fgame); notice = ''; requestWake(); go('fplay');
+    FG = clone(S.fgame); notice = ''; requestWake(); fPrefetch(); go('fplay');
   }
 
   // ── Spielablauf ────────────────────────────────────────────────────────────
@@ -2888,27 +2958,33 @@
     var p = FG.players[FG.cur.pi];
     return speechOK && FG.read === 'auto' && (p.age === 'k' || p.age === 'm');
   }
-  function fQSpeech() {
-    var c = FG.cur, it = c.it, t = it.frage;
-    if (it.typ === 'mc') t += ' ' + c.order.map(function (o, d) { return 'Antwort ' + 'ABCD'.charAt(d) + ': ' + it.antworten[o] + '.'; }).join(' ');
-    else if (it.typ === 'tf') t += ' Wahr oder falsch?';
-    else if (it.typ === 'fam') t += ' ' + c.E + ' sagt, ob es stimmt.';
-    return t;
+  function endDot(t) { return /[.!?…]$/.test(t) ? t : t + '.'; }
+  // Gesprochen wird in Teilen (Frage, „Antwort A.“, Antwort …), damit jeder Teil als Aufnahme vorliegen kann.
+  function fQParts() {
+    var c = FG.cur, it = c.it, p = [it.frage];
+    if (it.typ === 'mc') c.order.forEach(function (o, d) { p.push('Antwort ' + 'ABCD'.charAt(d) + '.', endDot(plainSpeech(it.antworten[o]))); });
+    else if (it.typ === 'tf') p.push('Wahr oder falsch?');
+    else if (it.typ === 'fam') p.push(c.E + ' sagt, ob es stimmt.');
+    return p;
   }
   function fRightText(it) { return it.typ === 'mc' ? it.antworten[it.richtig] : (it.richtig ? 'Wahr' : 'Falsch'); }
-  function fFbSpeech() {
-    var c = FG.cur, it = c.it, t;
-    if (it.typ === 'tat') t = c.ok ? 'Geschafft! Super.' : 'Nächstes Mal klappt es.';
-    else if (it.typ === 'fam') t = c.ok ? 'Stimmt!' : 'Stimmt nicht.';
-    else t = c.ok ? 'Richtig!' : 'Nicht ganz. Richtig ist: ' + fRightText(it) + '.';
-    if (it.info) t += ' ' + it.info;
-    return t;
+  function fFbParts(ok) {
+    var it = FG.cur.it, p;
+    if (it.typ === 'tat') p = [ok ? 'Geschafft! Super.' : 'Nächstes Mal klappt es.'];
+    else if (it.typ === 'fam') p = [ok ? 'Stimmt!' : 'Stimmt nicht.'];
+    else p = ok ? ['Richtig!'] : ['Nicht ganz. Richtig ist:', endDot(plainSpeech(fRightText(it)))];
+    if (it.info) p.push(it.info);
+    return p;
+  }
+  function fPrefetch() {
+    if (!FG || !FG.cur) return;
+    prefetch(fQParts()); prefetch(fFbParts(true)); prefetch(fFbParts(false));
   }
 
   function fShow() {
     if (!FG || FG.cur.phase !== 'ready') return;
     FG.cur.phase = 'ask'; fPersist(); render(); window.scrollTo(0, 0);
-    if (fAuto()) speak(fQSpeech());
+    if (fAuto()) say(fQParts());
   }
 
   function fAnswer(choice) {
@@ -2919,14 +2995,14 @@
     FG.asked[c.pi]++;
     if (ok) { FG.right[c.pi]++; FG.scores[c.pi]++; FG.stars++; }
     fPersist(); render(); window.scrollTo(0, 0);
-    if (fAuto()) speak(fFbSpeech());
+    if (fAuto()) say(fFbParts(ok));
   }
 
   function fSkip() {
     var c = FG && FG.cur; if (!c || c.phase === 'fb') return;
     var ph = c.phase; stopSpeak();
     fDraw(ph); fPersist(); render();
-    if (ph === 'ask' && fAuto()) speak(fQSpeech());
+    if (ph === 'ask' && fAuto()) say(fQParts());
   }
 
   function fNext() {
@@ -2990,7 +3066,7 @@
     var card = el('div', { class: 'card' },
       el('div', { class: 'meta', text: fMeta(it) }),
       (!locked && speechOK && FG.read !== 'aus')
-        ? el('div', { class: 'speakrow' }, el('button', { class: 'chip', id: 'speakBtn', text: 'Vorlesen', onclick: function () { speak(fQSpeech()); } })) : null,
+        ? el('div', { class: 'speakrow' }, el('button', { class: 'chip', id: 'speakBtn', text: 'Vorlesen', onclick: function () { say(fQParts()); } })) : null,
       it.bild ? el('div', { class: 'fbild', text: it.bild }) : null,
       el('div', { class: 'qtext fq', text: it.frage }));
     if (it.typ === 'mc') {
@@ -3102,7 +3178,7 @@
   var VOICE_SAMPLE = 'Hallo! Ich lese euch die Fragen vor. Welches Tier sagt Miau?';
   var voiceSig = '';
   try {
-    if (speechOK && window.speechSynthesis.addEventListener) {
+    if (ttsOK && window.speechSynthesis.addEventListener) {
       window.speechSynthesis.addEventListener('voiceschanged', function () {
         var sig = deVoices().map(function (v) { return v.name; }).join('|');
         if (sig === voiceSig) return;
@@ -3116,16 +3192,28 @@
   function fVoiceBlock(f, chip) {
     var vs = deVoices().slice(0, 8);
     voiceSig = deVoices().map(function (v) { return v.name; }).join('|');
-    var cur = f.voice ? vs.filter(function (v) { return v.name === f.voice; })[0] : null;
+    var seen = {};
+    var labels = vs.map(function (v) {
+      var l = voiceLabel(v); seen[l] = (seen[l] || 0) + 1;
+      return seen[l] > 1 ? l + ' (' + seen[l] + ')' : l;
+    });
+    var rec = f.voice === 'rec';
+    var named = vs.filter(function (v) { return v.name === f.voice; })[0];
+    var auto = !rec && !named;   // 'auto' oder eine Stimme, die es auf diesem iPhone nicht (mehr) gibt
+    var recFail = rec && AUDIO.state === 'fail';
+    var chips = [
+      chip('Natürlich', rec, function () { f.voice = 'rec'; say([VOICE_SAMPLE]); }),
+      chip('iPhone automatisch', auto, function () { f.voice = 'auto'; say([VOICE_SAMPLE]); })
+    ];
+    if (vs.length > 2) vs.forEach(function (v, i) { chips.push(chip(labels[i], f.voice === v.name, function () { f.voice = v.name; say([VOICE_SAMPLE]); })); });
     return el('div', { id: 'voiceblock' },
       el('div', { class: 'label', style: 'margin-top:16px', text: 'Stimme' }),
-      vs.length > 1 ? el('div', { class: 'chips' },
-        chip('Automatisch', !cur, function () { f.voice = ''; speak(VOICE_SAMPLE); }),
-        vs.map(function (v) { return chip(voiceLabel(v), cur === v, function () { f.voice = v.name; speak(VOICE_SAMPLE); }); })) : null,
-      el('button', { class: 'btn', id: 'voiceTest', style: 'margin-top:10px', text: 'Probe hören', onclick: function () { speak(VOICE_SAMPLE); } }),
-      el('div', { class: 'hint', text: vs.length > 1
-        ? 'Klingt eine Stimme blechern? Einfach andere antippen, sie spricht gleich einen Probesatz. Welche Stimmen es gibt, bestimmt das iPhone.'
-        : 'Klingt die Stimme blechern? Welche Stimmen zur Auswahl stehen, bestimmt das iPhone. Apple gibt Web-Apps oft nur die einfachen Stimmen frei.' }));
+      el('div', { class: 'chips' }, chips),
+      el('button', { class: 'btn', id: 'voiceTest', style: 'margin-top:10px', text: 'Probe hören', onclick: function () { say([VOICE_SAMPLE]); } }),
+      el('div', { class: 'hint' + (recFail ? ' warn' : ''), text: recFail
+        ? 'Die Aufnahmen konnten nicht geladen werden (Internet?). Bis dahin liest die iPhone-Stimme vor.'
+        : rec ? 'Natürliche Stimme, vorab aufgenommen. Fragen mit Namen liest weiterhin die iPhone-Stimme vor.'
+        : 'Die iPhone-Stimme klingt technischer. Welche Stimmen es gibt, bestimmt das iPhone.' }));
   }
 
   function viewFSetup() {
@@ -3190,7 +3278,7 @@
       hintEl, startBtn);
   }
 
-  function boot() { loadBase().then(function () { render(); }); }
+  function boot() { loadAudio(); loadBase().then(function () { render(); }); }
   boot();
 })();
 </script>

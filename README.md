@@ -9,6 +9,8 @@ Quizspiel für zwei – gedacht für einen Spieleabend zu zweit, läuft als Web-
 - `paarfragen.json` – Vorschläge für den Paarabend (64 Fragen in drei Stufen, Freitext oder Auswahl)
 - `familienfragen.json` – Fragen für die Familienrunde (163 Fragen in drei Altersstufen: Auswahl, Wahr/Falsch, Mitmach-Aufgaben, Familienfragen)
 - `verbindungstest.html` – Diagnose-Seite: prüft, ob sich zwei iPhones im WLAN direkt verbinden
+- `audio/` – aufgenommene Vorlese-Stimme für die Familienrunde (ein Clip pro Satz oder Antwort, `index.json` listet sie auf)
+- `tools/make_audio.py` – erzeugt die Clips neu (Hinweise im Skriptkopf)
 - `icon.png` – Symbol für den Home-Bildschirm
 
 ## Spielregeln
@@ -61,7 +63,9 @@ Startseite → „Familienrunde starten“. Gedacht für 2 bis 6 Personen an ein
 - Jede Person bekommt Fragen passend zur Stufe. Klein und Mittel nutzen nur die Familienfragen, Groß und Erwachsen zusätzlich leichte bis mittlere Wissensfragen (ohne Psychologie). Die Fragenarten sind Auswahl, Wahr/Falsch, Mitmach-Aufgaben („Hüpfe dreimal wie ein Hase.“) und Familienfragen („Was isst Anna am liebsten?“, die genannte Person sagt, ob die Antwort stimmt).
 - „Andere Frage“ tauscht eine Frage aus, ohne dass es etwas kostet.
 - Spielform „Gemeinsam“: Alle sammeln zusammen Sterne, jede richtige Antwort bringt einen Stern für die ganze Familie. Es gibt keinen Verlierer. „Reihum“: Jede Person (oder jedes Team, optional „Teams bilden“) sammelt Punkte, am Ende gibt es eine Rangliste, auch mit Gleichstand.
-- Vorlesen: Die Sprachausgabe des iPhones liest Frage und Antworten auf Deutsch vor. Einstellbar: für Klein und Mittel automatisch, nur per Knopf „Vorlesen“ oder aus. Dafür muss am iPhone der Ton an sein; bleibt es stumm, bitte Lautstärke und Stummschalter prüfen. Unter „Stimme“ lässt sich die Stimme wählen und per „Probe hören“ ausprobieren. „Automatisch“ meidet technisch klingende Stimmen und nimmt sonst den Standard des iPhones. Welche Stimmen zur Auswahl stehen, bestimmt iOS, das Web-Apps oft nur die einfachen Stimmen freigibt.
+- Vorlesen: Einstellbar für Klein und Mittel automatisch, nur per Knopf „Vorlesen“ oder aus. Dafür muss am iPhone der Ton an sein; bleibt es stumm, bitte Lautstärke und Stummschalter prüfen.
+- Stimme: Standard ist „Natürlich“, eine vorab aufgenommene deutsche Stimme (Piper „Thorsten“, frei nutzbar). Sie liegt als kleine Clips im Ordner `audio/` und wird beim Spielen aus dem Netz geladen. Fragen mit Namen („Was isst Anna am liebsten?“) und selbst importierte Fragen kann sie nicht sprechen, dort liest die iPhone-Stimme, ebenso wenn die Aufnahmen nicht ladbar sind. „iPhone automatisch“ nimmt die Stimme des Geräts (meidet technisch klingende Stimmen). Je nach iOS-Version stehen noch weitere iPhone-Stimmen zur Wahl. Mit „Probe hören“ lässt sich jede Stimme ausprobieren.
+- Die Clips heißen nach einem Hash des gesprochenen Textes. Wird eine Frage geändert, liest die iPhone-Stimme sie, bis die Clips mit `python3 tools/make_audio.py` neu erzeugt sind.
 - Pause: Oben rechts „Beenden“ → „Pause machen“. Der Stand bleibt gespeichert, auf der Startseite steht „Familienrunde läuft“ mit „Fortsetzen“ und „Verwerfen“. Gespeichert werden Spielerinnen und Spieler, Punkte und die aktuelle Frage.
 - Bereits gestellte Familienfragen werden vermerkt, damit sich Fragen nicht so schnell wiederholen. Die Sicherung enthält die Familienrunde-Einstellungen (Namen, Altersstufen, Spielform) und diese Liste.
 
