@@ -320,7 +320,8 @@
     }) : [];
     while (pl.length < 2) pl.push({ name: '', age: pl.length ? 'm' : 'e', team: 0 });
     return { players: pl, mode: f.mode === 'reihum' ? 'reihum' : 'gemeinsam', rounds: Math.min(8, Math.max(1, Math.round(Number(f.rounds)) || 3)),
-             teams: !!f.teams, read: ['auto', 'knopf', 'aus'].indexOf(f.read) >= 0 ? f.read : 'auto' };
+             teams: !!f.teams, read: ['auto', 'knopf', 'aus'].indexOf(f.read) >= 0 ? f.read : 'auto',
+             voice: typeof f.voice === 'string' ? f.voice.slice(0, 80) : '' };
   }
   var S = loadStore();
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }
@@ -2758,14 +2759,41 @@
   function plainSpeech(t) {
     return String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{FE0F}\u{200D}]/gu, ' ').replace(/\s+/g, ' ').trim();
   }
+  // Stimmenauswahl: iOS gibt Web-Apps oft nur einfache Stimmen frei, manche davon klingen sehr technisch.
+  var ROBOT = /^(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|fred|junior|kathy|ralph)\b/i;
+  var NICE = /^(anna|helena|markus|petra|yannick|viktor|martin)\b/i;
+  function voiceScore(v) {
+    var n = String(v.name || ''), sc = 0;
+    if (/premium|enhanced|erweitert|neural|natural|siri/i.test(n + ' ' + (v.voiceURI || ''))) sc += 100;
+    if (NICE.test(n)) sc += 20;
+    if (ROBOT.test(n)) sc -= 100;
+    if (/de[-_]DE/i.test(v.lang || '')) sc += 5;
+    if (v.localService) sc += 2;
+    return sc;
+  }
+  function deVoices() {
+    var all = [];
+    try { all = (window.speechSynthesis && window.speechSynthesis.getVoices) ? window.speechSynthesis.getVoices() : []; } catch (e) {}
+    return Array.prototype.filter.call(all || [], function (v) { return v && /^de/i.test(v.lang || ''); })
+      .sort(function (a, b) { return voiceScore(b) - voiceScore(a); });
+  }
+  function voiceLabel(v) { return String(v.name || '').replace(/\s*\(.*$/, '') + (/premium/i.test(v.name) ? ' (Premium)' : /enhanced|erweitert/i.test(v.name) ? ' (Erweitert)' : ''); }
+  function chosenVoice() {
+    var vs = deVoices();
+    if (!vs.length) return null;
+    var want = S.fam && S.fam.voice;
+    if (want) { var m = vs.filter(function (v) { return v.name === want; })[0]; if (m) return m; }
+    // Automatisch: nur eine Stimme nehmen, die nicht technisch klingt; sonst Standard des iPhones (über die Sprache)
+    return voiceScore(vs[0]) > -50 ? vs[0] : null;
+  }
   function speak(text) {
     if (!speechOK) return;
     try {
       var syn = window.speechSynthesis; syn.cancel();
       var u = new window.SpeechSynthesisUtterance(plainSpeech(text));
-      u.lang = 'de-DE'; u.rate = 0.92;
-      var vs = (syn.getVoices ? syn.getVoices() : []).filter(function (v) { return /^de/i.test(v.lang); });
-      if (vs.length) u.voice = vs.filter(function (v) { return /de[-_]DE/i.test(v.lang); })[0] || vs[0];
+      var v = chosenVoice();
+      u.lang = v ? v.lang : 'de-DE'; u.rate = 0.95; u.pitch = 1;
+      if (v) u.voice = v;
       syn.speak(u);
     } catch (e) {}
   }
@@ -3070,6 +3098,36 @@
     return { ok: true, n: named.length };
   }
 
+  // ── Stimme wählen ──────────────────────────────────────────────────────────
+  var VOICE_SAMPLE = 'Hallo! Ich lese euch die Fragen vor. Welches Tier sagt Miau?';
+  var voiceSig = '';
+  try {
+    if (speechOK && window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener('voiceschanged', function () {
+        var sig = deVoices().map(function (v) { return v.name; }).join('|');
+        if (sig === voiceSig) return;
+        voiceSig = sig;
+        var a = document.activeElement;
+        if (view === 'fsetup' && !(a && a.tagName === 'INPUT')) render();
+      });
+    }
+  } catch (e) {}
+
+  function fVoiceBlock(f, chip) {
+    var vs = deVoices().slice(0, 8);
+    voiceSig = deVoices().map(function (v) { return v.name; }).join('|');
+    var cur = f.voice ? vs.filter(function (v) { return v.name === f.voice; })[0] : null;
+    return el('div', { id: 'voiceblock' },
+      el('div', { class: 'label', style: 'margin-top:16px', text: 'Stimme' }),
+      vs.length > 1 ? el('div', { class: 'chips' },
+        chip('Automatisch', !cur, function () { f.voice = ''; speak(VOICE_SAMPLE); }),
+        vs.map(function (v) { return chip(voiceLabel(v), cur === v, function () { f.voice = v.name; speak(VOICE_SAMPLE); }); })) : null,
+      el('button', { class: 'btn', id: 'voiceTest', style: 'margin-top:10px', text: 'Probe hören', onclick: function () { speak(VOICE_SAMPLE); } }),
+      el('div', { class: 'hint', text: vs.length > 1
+        ? 'Klingt eine Stimme blechern? Einfach andere antippen, sie spricht gleich einen Probesatz. Welche Stimmen es gibt, bestimmt das iPhone.'
+        : 'Klingt die Stimme blechern? Welche Stimmen zur Auswahl stehen, bestimmt das iPhone. Apple gibt Web-Apps oft nur die einfachen Stimmen frei.' }));
+  }
+
   function viewFSetup() {
     var f = S.fam;
     function upd(fn) { fn(); save(); render(); }
@@ -3127,7 +3185,8 @@
           chip('Für Klein und Mittel automatisch', f.read === 'auto', function () { f.read = 'auto'; }),
           chip('Nur per Knopf', f.read === 'knopf', function () { f.read = 'knopf'; }),
           chip('Aus', f.read === 'aus', function () { f.read = 'aus'; })),
-        el('div', { class: 'hint', text: 'Die Sprachausgabe des iPhones liest Frage und Antworten auf Deutsch vor. Bei „Klein“ und „Mittel“ geht es von allein los.' })) : null,
+        el('div', { class: 'hint', text: 'Die Sprachausgabe des iPhones liest Frage und Antworten auf Deutsch vor. Bei „Klein“ und „Mittel“ geht es von allein los.' }),
+        fVoiceBlock(f, chip)) : null,
       hintEl, startBtn);
   }
 
